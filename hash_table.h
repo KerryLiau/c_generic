@@ -1,12 +1,6 @@
 #ifndef HASH_TABLE_H
 #define HASH_TABLE_H
 
-typedef struct 
-{
-    char* key;
-    char* value;
-} HashTableItem;
-
 typedef struct HashTable_Private HashTable_Private;
 
 typedef struct 

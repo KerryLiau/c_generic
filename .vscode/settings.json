@@ -29,6 +29,7 @@
         "unordered_map": "c",
         "utility": "c",
         "__mutex_base": "c",
-        "chrono": "c"
+        "chrono": "c",
+        "climits": "c"
     }
 }

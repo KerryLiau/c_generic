@@ -11,6 +11,12 @@
 // Private Properties
 // ================================================================================
 // 實作雜湊表的私有屬性
+typedef struct HashTableItem
+{
+    char *key;
+    char *value;
+} HashTableItem;
+
 struct HashTable_Private
 {
     // 雜湊映射表的容器大小
@@ -26,7 +32,7 @@ struct HashTable_Private
      */
     int modified_count;
     // 承裝映射物件的容器
-    HashTableItem** items;
+    HashTableItem **items;
 };
 
 // 作為雜湊運算用的常數
@@ -43,11 +49,11 @@ static const char *DELIMITER = ",";
 static const char *BEGIN = "{";
 static const char *END = "}";
 
-static HashTableItem* New_HashTableItem(const char *k, const char *v) 
+static HashTableItem* New_HashTableItem(const char *key, const char *val) 
 {
     HashTableItem* item = malloc(sizeof(HashTableItem));
-    item->key = strdup(k);
-    item->value = strdup(v);
+    item->key = strdup(key);
+    item->value = strdup(val);
     return item;
 }
 
@@ -65,7 +71,7 @@ static int Calculate_StringHash(const char *str, const int hash_arg, const int m
     for (size_t i = 0; i < str_len; i++)
     {
         hash += (long) pow(hash_arg, str_len - (i + 1)) * str[i];
-        if (hash > 0XFFFFFFFF / 2)
+        if (hash > (0XFFFFFFFF / 2) - 1)
         {
             hash >>= 2;
         }
@@ -118,12 +124,9 @@ static void HashTable_Resize(HashTable *table)
     for (size_t i = 0; i < curr_priv->bucket_size; i++)
     {
         HashTableItem *item = curr_priv->items[i];
-        if (item != NULL)
+        if (HashTableItem_IsValid(item))
         {
-            if (!HashTableItem_IsAbandoned(item))
-            {
-                HashTable_Put(temp_table, item->key, item->value);
-            }
+            HashTable_Put(temp_table, item->key, item->value);
         }
     }
     HashTable_Private *temp_priv = temp_table->priv;
