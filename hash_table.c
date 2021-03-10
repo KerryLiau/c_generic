@@ -10,7 +10,23 @@
 // ================================================================================
 // Private Properties
 // ================================================================================
+static int VAL_TYPE_STR = 0X0;
+static int VAL_TYPE_INT = 0X1;
+static int VAL_TYPE_LONG = 0X2;
+static int VAL_TYPE_FLOAT = 0X3;
+static int VAL_TYPE_DOUBLE = 0X4;
+static int VAL_TYPE_MAP = 0X5;
+static int VAL_TYPE_ARRAY = 0X6;
 // 實作雜湊表的私有屬性
+union HashItem
+{
+    char *s_val;
+    int *i_val;
+    long *l_val;
+    float *f_val;
+    double *d_val;
+};
+
 typedef struct HashTableItem
 {
     char *key;
@@ -36,9 +52,9 @@ struct HashTable_Private
 };
 
 // 作為雜湊運算用的常數
-static int HASH_ARG_PRIME_1 = 5;
-static int HASH_ARG_PRIME_2 = 11;
-static int DEFAULT_SIZE = 0XF0;
+static int HASH_ARG_PRIME_1 = 0X83;
+static int HASH_ARG_PRIME_2 = 0X1f;
+static int DEFAULT_SIZE = 0X1f;
 
 // 作為判定已刪除的物件
 static HashTableItem HT_DELETED_ITEM = {NULL, NULL};
@@ -64,27 +80,25 @@ static void Delete_HashTableItem(HashTableItem* item)
     free(item);
 }
 
-static int Calculate_StringHash(const char *str, const int hash_arg, const int max) 
+static int Calculate_StringHash(const char *str, const int hash_arg) 
 {
     long hash = 0;
     const int str_len = strlen(str);
     for (size_t i = 0; i < str_len; i++)
     {
-        hash += (long) pow(hash_arg, str_len - (i + 1)) * str[i];
-        if (hash > (0XFFFFFFFF / 2) - 1)
-        {
-            hash >>= 2;
-        }
-        hash %= max;
+        hash = str[i] * hash_arg ^ (str_len - 1);
     }
     return (int) hash;
 }
 
 static int Get_HashValue(const char *str, const int num_buckets, const int attempt)
 {
-    const int hash_a = Calculate_StringHash(str, HASH_ARG_PRIME_1, num_buckets);
-    const int hash_b = Calculate_StringHash(str, HASH_ARG_PRIME_2, num_buckets);
-    int result = (hash_a + (attempt * (hash_b))) + (hash_a ^ hash_b) % num_buckets;
+    const int hash_a = Calculate_StringHash(str, HASH_ARG_PRIME_1);
+    const int hash_b = Calculate_StringHash(str, HASH_ARG_PRIME_2);
+    int result = hash_a + hash_b;
+    result += result % num_buckets;
+    result += attempt;
+    result %= num_buckets;
     return result;
 }
 
@@ -100,8 +114,8 @@ static inline int HashTableItem_IsValid(HashTableItem *item)
 
 static HashTable* _New_HashTable(int size)
 {
-    HashTable* table = malloc(sizeof(HashTable));
-    HashTable_Private *priv = malloc(sizeof(HashTable_Private));
+    HashTable* table = calloc(1, sizeof(HashTable));
+    HashTable_Private *priv = calloc(1, sizeof(HashTable_Private));
     priv->bucket_size = size;
     priv->item_count = 0;
     priv->modified_count = 0;
@@ -112,8 +126,8 @@ static HashTable* _New_HashTable(int size)
 
 static void HashTable_Resize(HashTable *table)
 {
-    int next_pow_of_2 = (int) NumberUtil_NextPowerOf_2(table->priv->item_count);
-    int new_size = next_pow_of_2 + (next_pow_of_2 >> 1);
+    int current_size = table->priv->item_count;
+    int new_size = NumberUtil_NextPrime(current_size * 5);
     if (DEFAULT_SIZE >= new_size) new_size = DEFAULT_SIZE;
     HashTable *temp_table = _New_HashTable(new_size);
     if (!temp_table)
@@ -141,7 +155,7 @@ static void HashTable_Resize(HashTable *table)
 static int HashTable_NeedResize(HashTable *table)
 {
     HashTable_Private *priv = table->priv;
-    return priv->modified_count * 100 / priv->bucket_size > 70;
+    return priv->modified_count * 100 / priv->bucket_size > 75;
 }
 
 // ================================================================================
@@ -186,7 +200,6 @@ void HashTable_Put(HashTable *table, const char *key, const char *value)
             priv->items[index] = new_item;
             return;
         }
-        printf("key '%s' collide\n", key);
         index = Get_HashValue(new_item->key, priv->bucket_size, i);
         curr_item = priv->items[index];
         i++;
@@ -277,7 +290,7 @@ char* HashTable_ToString(HashTable *table)
             StringBuilder_Append(builder, QUOTE);
             StringBuilder_Append(builder, EQUAL);
             StringBuilder_Append(builder, QUOTE);
-            StringBuilder_Append(builder, item->value);
+            StringBuilder_Append(builder, (char*) item->value);
             StringBuilder_Append(builder, QUOTE);
             
             counter++;

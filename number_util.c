@@ -18,8 +18,28 @@ static long NumberUtil_Next_PO2(int input, int pow_number)
     return NumberUtil_Next_PO2(input, pow_number + 1);
 }
 
+static int NumberUtil_IsPrime(int input)
+{
+    if (input == 0 || input % 2 == 0) return 0;
+    if (input < 9) return 1;
+    int max = floor(sqrt((double) input));
+    int i = 3;
+    while (i < max)
+    {
+        if (input % i == 0) return 0;
+        i += 2;
+    }
+    return 1;
+}
+
 long NumberUtil_NextPowerOf_2(int input)
 {
     int pow_number = 1;
     return NumberUtil_Next_PO2(input, pow_number);
+}
+
+long NumberUtil_NextPrime(int input)
+{
+    if (NumberUtil_IsPrime(input)) return input;
+    return NumberUtil_NextPrime(input + 1);
 }

@@ -3,4 +3,6 @@
 
 long NumberUtil_NextPowerOf_2(int input);
 
+long NumberUtil_NextPrime(int input);
+
 #endif

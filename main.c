@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "hash_table.h"
 #include "string_builder.h"
 
@@ -72,8 +73,10 @@ void HashTable_Resize_Test()
     HashTable *table = New_HashTable();
     StringBuilder *key_builder = New_StringBuilder();
     StringBuilder *value_builder = New_StringBuilder();
-    printf("First, let's put 20 element in table\n");
-    for (size_t i = 0; i < 20; i++)
+
+    int count = 100;
+    printf("First, let's put %d element in table\n", count);
+    for (size_t i = 0; i < count; i++)
     {
         StringBuilder_Append(key_builder, (int) i);
         StringBuilder_Append(value_builder, (int) i);
@@ -83,11 +86,12 @@ void HashTable_Resize_Test()
         StringBuilder_Clear(key_builder);
         StringBuilder_Clear(value_builder);
     }
-    char *table_str = HashTable_ToString(table);
-    printf("now the table looks like below:\n%s\n", table_str);
-    free(table_str);
+    printf("finished, now the table size is %d\n", HashTable_Size(table));
+    char *table_str1 = HashTable_ToString(table);
+    printf("now the table looks like below:\n%s\n", table_str1);
+    free(table_str1);
     printf("Second, let's delete all element in table\n");
-    for (size_t i = 0; i < 20; i++)
+    for (size_t i = 0; i < count; i++)
     {
         StringBuilder_Append(key_builder, (int) i);
         HashTable_Delete(
@@ -95,6 +99,7 @@ void HashTable_Resize_Test()
         );
         StringBuilder_Clear(key_builder);
     }
+    char *table_str;
     if (HashTable_IsEmpty(table))
     {
         table_str = HashTable_ToString(table);
@@ -108,7 +113,11 @@ void HashTable_Resize_Test()
 
 int main() 
 {
+    time_t begin, end;
+    begin = clock();
     HashTable_Simple_Test();
     HashTable_Resize_Test();
-    return 0;
+    end = clock();
+    double period = end - begin;
+    printf("time cost: %f\n", period / CLOCKS_PER_SEC);
 }
