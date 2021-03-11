@@ -16,7 +16,7 @@ StringBuilder* New_StringBuilder()
     StringBuilder_Private *priv = (StringBuilder_Private*) malloc(sizeof(StringBuilder_Private));
     sb->priv = priv;
     priv->size = 10;
-    priv->value = (char*) malloc(sizeof(char*) * sb->priv->size);
+    priv->value = (char*) calloc(sb->priv->size, sizeof(char*));
     return sb;
 }
 
