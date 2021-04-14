@@ -17,8 +17,8 @@ typedef struct StringBuilder
     int: StringBuilder_AppendInt,\
     long: StringBuilder_AppendLong,\
     float: StringBuilder_AppendFloat,\
-    double: StringBuilder_AppendDouble)\
-    (sb, e)
+    double: StringBuilder_AppendDouble\
+)(sb, e)
 void StringBuilder_AppendString(StringBuilder *sb, char *str);
 void StringBuilder_AppendConstString(StringBuilder *sb, const char *str);
 void StringBuilder_AppendInt(StringBuilder *sb, int i);

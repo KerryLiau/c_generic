@@ -10,27 +10,30 @@
 // ================================================================================
 // Private Properties
 // ================================================================================
-static int VAL_TYPE_STR = 0X0;
-static int VAL_TYPE_INT = 0X1;
-static int VAL_TYPE_LONG = 0X2;
-static int VAL_TYPE_FLOAT = 0X3;
-static int VAL_TYPE_DOUBLE = 0X4;
-static int VAL_TYPE_MAP = 0X5;
-static int VAL_TYPE_ARRAY = 0X6;
+#define VAL_TYPE_STR 0X0
+#define VAL_TYPE_INT 0X1
+#define VAL_TYPE_LONG 0X2
+#define VAL_TYPE_FLOAT 0X3
+#define VAL_TYPE_DOUBLE 0X4
+#define VAL_TYPE_MAP 0X5
+#define VAL_TYPE_ARRAY 0X6
+
 // 實作雜湊表的私有屬性
-union HashItem
+typedef union
 {
     char *s_val;
     int *i_val;
     long *l_val;
     float *f_val;
     double *d_val;
-};
+} HashItem;
 
 typedef struct HashTableItem
 {
     char *key;
-    char *value;
+    // char *value;
+    HashItem *value;
+    int type;
 } HashTableItem;
 
 struct HashTable_Private
@@ -60,16 +63,32 @@ static int DEFAULT_SIZE = 0X1f;
 static HashTableItem HT_DELETED_ITEM = {NULL, NULL};
 
 static const char *QUOTE = "\"";
-static const char *EQUAL = "=";
+static const char *COLON = ":";
 static const char *DELIMITER = ",";
 static const char *BEGIN = "{";
 static const char *END = "}";
 
-static HashTableItem* New_HashTableItem(const char *key, const char *val) 
+static HashTableItem* New_Str_HashTableItem(const char *key, const char *val) 
 {
-    HashTableItem* item = malloc(sizeof(HashTableItem));
+    HashTableItem* item = (HashTableItem*) malloc(sizeof(HashTableItem));
+    item->type = VAL_TYPE_STR;
     item->key = strdup(key);
-    item->value = strdup(val);
+    HashItem *value = (HashItem*) malloc(sizeof(HashItem));
+    value->s_val = strdup(val);
+    item->value = value;
+    return item;
+}
+
+static HashTableItem* New_Int_HashTableItem(const char *key, int val) 
+{
+    HashTableItem* item = (HashTableItem*) malloc(sizeof(HashTableItem));
+    item->type = VAL_TYPE_INT;
+    item->key = strdup(key);
+    HashItem *value = (HashItem*) malloc(sizeof(HashItem));
+    int *intVal = (int*) malloc(sizeof(int));
+    *intVal = val;
+    value->i_val = intVal;
+    item->value = value;
     return item;
 }
 
@@ -124,10 +143,34 @@ static HashTable* _New_HashTable(int size)
     return table;
 }
 
+static void HashTable_PutItem(HashTable *table, HashTableItem *new_item)
+{
+    HashTable_Private *priv = table->priv;
+    int index = Get_HashValue(new_item->key, priv->bucket_size, 0);
+    HashTableItem *item = priv->items[index];
+    int i = 1;
+    while (item != NULL)
+    {
+        if (HashTableItem_IsAbandoned(item) || strcmp(new_item->key, item->key) != 0)
+        {
+            index = Get_HashValue(new_item->key, priv->bucket_size, i);
+            item = priv->items[index];
+            i++;
+            continue;
+        }
+        Delete_HashTableItem(item);
+        priv->items[index] = new_item;
+        break;
+    }
+    priv->items[index] = new_item;
+    priv->item_count++;
+    priv->modified_count++;
+}
+
 static void HashTable_Resize(HashTable *table)
 {
     int current_size = table->priv->item_count;
-    int new_size = NumberUtil_NextPrime(current_size * 5);
+    int new_size = NumberUtil_NextPrime(current_size * 2);
     if (DEFAULT_SIZE >= new_size) new_size = DEFAULT_SIZE;
     HashTable *temp_table = _New_HashTable(new_size);
     if (!temp_table)
@@ -140,7 +183,7 @@ static void HashTable_Resize(HashTable *table)
         HashTableItem *item = curr_priv->items[i];
         if (HashTableItem_IsValid(item))
         {
-            HashTable_Put(temp_table, item->key, item->value);
+            HashTable_PutItem(temp_table, item);
         }
     }
     HashTable_Private *temp_priv = temp_table->priv;
@@ -156,6 +199,33 @@ static int HashTable_NeedResize(HashTable *table)
 {
     HashTable_Private *priv = table->priv;
     return priv->modified_count * 100 / priv->bucket_size > 75;
+}
+
+static inline void HashTable_EnsureTableSize(HashTable *table)
+{
+    if (HashTable_NeedResize(table)) {
+        HashTable_Resize(table);
+    }
+}
+
+static HashTableItem* HashTable_Find(HashTable *table, const char *key)
+{
+    HashTable_Private *priv = table->priv;
+    int index = Get_HashValue(key, priv->bucket_size, 0);
+    HashTableItem *item = priv->items[index];
+    int i = 1;
+    while (item != NULL)
+    {
+        if (HashTableItem_IsAbandoned(item) || strcmp(item->key, key) != 0)
+        {
+            index = Get_HashValue(key, priv->bucket_size, i);
+            item = priv->items[index];
+            i++;
+            continue;
+        }
+        return item;
+    }
+    return NULL;
 }
 
 // ================================================================================
@@ -181,54 +251,35 @@ void Delete_HashTable(HashTable **p_to_table)
     *p_to_table = NULL;
 } 
 
-void HashTable_Put(HashTable *table, const char *key, const char *value)
+void HashTable_Put_Str(HashTable *table, const char *key, const char *value)
 {
-    if (HashTable_NeedResize(table))
-    {
-        HashTable_Resize(table);
-    }
-    HashTable_Private *priv = table->priv;
-    HashTableItem *new_item = New_HashTableItem(key, value);
-    int index = Get_HashValue(new_item->key, priv->bucket_size, 0);
-    HashTableItem *curr_item = priv->items[index];
-    int i = 1;
-    while (curr_item != NULL)
-    {
-        if (!HashTableItem_IsAbandoned(curr_item) && strcmp(key, curr_item->key) == 0)
-        {
-            Delete_HashTableItem(curr_item);
-            priv->items[index] = new_item;
-            return;
-        }
-        index = Get_HashValue(new_item->key, priv->bucket_size, i);
-        curr_item = priv->items[index];
-        i++;
-    }
-    priv->items[index] = new_item;
-    priv->item_count++;
-    priv->modified_count++;
+    HashTable_EnsureTableSize(table);
+    HashTableItem *new_item = New_Str_HashTableItem(key, value);
+    HashTable_PutItem(table, new_item);
 }
 
-char* HashTable_Find(HashTable *table, const char *key)
+
+
+void HashTable_Put_Int(HashTable *table, const char *key, int value)
 {
-    HashTable_Private *priv = table->priv;
-    int index = Get_HashValue(key, priv->bucket_size, 0);
-    HashTableItem *item = priv->items[index];
-    int i = 1;
-    while (item != NULL)
-    {
-        if (!HashTableItem_IsAbandoned(item))
-        {
-            if (strcmp(item->key, key) == 0)
-            {
-                return item->value;
-            }
-        }
-        index = Get_HashValue(key, priv->bucket_size, i);
-        item = priv->items[index];
-        i++;
-    }
-    return NULL;
+    HashTable_EnsureTableSize(table);
+    HashTableItem *new_item = New_Int_HashTableItem(key, value);
+    HashTable_PutItem(table, new_item);
+}
+
+char* HashTable_Find_Str(HashTable *table, const char *key)
+{
+    HashTableItem *item = HashTable_Find(table, key);
+    if (!item || item->type != VAL_TYPE_STR) return NULL;
+    return item->value->s_val;
+}
+
+int* HashTable_Find_Int(HashTable *table, const char *key)
+{
+    HashTableItem *item = HashTable_Find(table, key);
+    if (!item || item->type != VAL_TYPE_INT) return NULL;
+    int *result = (item->value->i_val);
+    return result;
 }
 
 void HashTable_Delete(HashTable *table, const char *key)
@@ -239,25 +290,20 @@ void HashTable_Delete(HashTable *table, const char *key)
     int i = 1;
     while (item != NULL)
     {
-        if (!HashTableItem_IsAbandoned(item))
+        if (HashTableItem_IsAbandoned(item) || strcmp(item->key, key) != 0)
         {
-            if (strcmp(item->key, key) == 0)
-            {
-                Delete_HashTableItem(item);
-                priv->items[index] = &HT_DELETED_ITEM;
-                priv->item_count--;
-                priv->modified_count++;
-                break;
-            }
+            index = Get_HashValue(key, priv->bucket_size, i);
+            item = priv->items[index];
+            i++;
+            continue;
         }
-        index = Get_HashValue(key, priv->bucket_size, i);
-        item = priv->items[index];
-        i++;
+        Delete_HashTableItem(item);
+        priv->items[index] = &HT_DELETED_ITEM;
+        priv->item_count--;
+        priv->modified_count++;
+        break;
     }
-    if (HashTable_NeedResize(table))
-    {
-        HashTable_Resize(table);
-    }
+    HashTable_EnsureTableSize(table);
 }
 
 inline int HashTable_Size(HashTable *table)
@@ -276,25 +322,39 @@ char* HashTable_ToString(HashTable *table)
     StringBuilder *builder = New_StringBuilder();
     StringBuilder_Append(builder, BEGIN);
     HashTable_Private *priv = table->priv;
+
     for (size_t i = 0; i < priv->bucket_size; i++)
     {
         HashTableItem *item = priv->items[i];
-        if (HashTableItem_IsValid(item))
+        if (!HashTableItem_IsValid(item)) continue;
+
+        if (counter > 0) StringBuilder_Append(builder, DELIMITER);
+        StringBuilder_Append(builder, QUOTE);
+        StringBuilder_Append(builder, item->key);
+        StringBuilder_Append(builder, QUOTE);
+        StringBuilder_Append(builder, COLON);
+        
+        int is_str = item->type == VAL_TYPE_STR;
+        if (is_str) StringBuilder_Append(builder, QUOTE);
+        
+        switch (item->type) 
         {
-            if (counter > 0)
-            {
-                StringBuilder_Append(builder, DELIMITER);
-            }
-            StringBuilder_Append(builder, QUOTE);
-            StringBuilder_Append(builder, item->key);
-            StringBuilder_Append(builder, QUOTE);
-            StringBuilder_Append(builder, EQUAL);
-            StringBuilder_Append(builder, QUOTE);
-            StringBuilder_Append(builder, (char*) item->value);
-            StringBuilder_Append(builder, QUOTE);
-            
-            counter++;
+            case VAL_TYPE_STR:
+                StringBuilder_Append(builder, item->value->s_val);
+                break;
+            case VAL_TYPE_INT:
+                StringBuilder_Append(builder, *(item->value->i_val));
+                break;
+            case VAL_TYPE_FLOAT:
+                StringBuilder_Append(builder, *(item->value->f_val));
+                break;
+            case VAL_TYPE_DOUBLE:
+                StringBuilder_Append(builder, *(item->value->d_val));
+                break;
         }
+        
+        if (is_str) StringBuilder_Append(builder, QUOTE);
+        counter++;
     }
     
     StringBuilder_Append(builder, END);

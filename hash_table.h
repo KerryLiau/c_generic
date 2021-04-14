@@ -12,9 +12,23 @@ HashTable* New_HashTable();
 
 void Delete_HashTable(HashTable **table);
 
-void HashTable_Put(HashTable *table, const char *key, const char *value);
+#define HashTable_Put(table, k, v) _Generic((v),\
+    const char*: HashTable_Put_Str,\
+    char*: HashTable_Put_Str,\
+    int: HashTable_Put_Int\
+)(table, k, v)
+/*
+    long: HashTable_Put_Long,\
+    double: HashTable_Put_Double,\
+    float: HashTable_Put_Float\
+*/
+void HashTable_Put_Str(HashTable *table, const char *key, const char *value);
 
-char* HashTable_Find(HashTable *table, const char *key);
+void HashTable_Put_Int(HashTable *table, const char *key, int i);
+
+char* HashTable_Find_Str(HashTable *table, const char *key);
+
+int* HashTable_Find_Int(HashTable *table, const char *key);
 
 void HashTable_Delete(HashTable *table, const char *key);
 

@@ -16,7 +16,7 @@ void HashTable_Simple_Test()
     const char *value = "World";
     HashTable_Put(table, key, value);
 
-    char *v = HashTable_Find(table, key);
+    char *v = HashTable_Find_Str(table, key);
     printf("the key is '%s', and the value is '%s'\n", key, v);
     int count = HashTable_Size(table);
     printf("now the map size is: %d\n", count);
@@ -27,7 +27,7 @@ void HashTable_Simple_Test()
     printf("\nlet's try update value stored in key %s\n", key);
     const char *new_value = "I'm Kerry";
     HashTable_Put(table, key, new_value);
-    v = HashTable_Find(table, key);
+    v = HashTable_Find_Str(table, key);
     if (strcmp(v, new_value) == count)
     {
         printf("now the value stored in '%s' has change to '%s'\n", key, new_value);
@@ -49,7 +49,7 @@ void HashTable_Simple_Test()
     printf("\nlet's try remove key %s\n", key);
     HashTable_Delete(table, key);
     printf("the map size is: %d\n", HashTable_Size(table));
-    v = HashTable_Find(table, key);
+    v = HashTable_Find_Str(table, key);
     if (v == NULL)
     {
         printf("the key %s is now removed \n", key);
@@ -80,7 +80,7 @@ void HashTable_Resize_Test()
     {
         StringBuilder_Append(key_builder, (int) i);
         StringBuilder_Append(value_builder, (int) i);
-        HashTable_Put(
+        HashTable_Put_Str(
             table, StringBuilder_Value(key_builder), StringBuilder_Value(value_builder)
         );
         StringBuilder_Clear(key_builder);
@@ -111,7 +111,7 @@ void HashTable_Resize_Test()
     Delete_StringBuilder(&value_builder);
 }
 
-int main() 
+void Time_Test()
 {
     time_t begin, end;
     begin = clock();
@@ -120,4 +120,32 @@ int main()
     end = clock();
     double period = end - begin;
     printf("time cost: %f\n", period / CLOCKS_PER_SEC);
+}
+
+void Generic_Test()
+{
+    HashTable *table = New_HashTable();
+    HashTable_Put(table, "intVal", 26);
+    HashTable_Put(table, "strVal", "foo");
+    printf("strVal: %s\n", HashTable_Find_Str(table, "strVal"));
+    printf("intVal: %d\n", *HashTable_Find_Int(table, "intVal"));
+    int *ss = HashTable_Find_Int(table, "ss");
+    if (!ss) printf("ss is NULL\n");
+    else printf("intVal: %d\n", *ss);
+}
+
+void Dynamic_Type()
+{
+    HashTable *table = New_HashTable();
+    HashTable_Put(table, "val", 26);
+    printf("%d\n", *HashTable_Find_Int(table, "val"));
+    HashTable_Put(table, "val", "AAA");
+    printf("%s\n", HashTable_Find_Str(table, "val"));
+}
+
+int main() 
+{
+    // Time_Test();
+    // Generic_Test();
+    Dynamic_Type();
 }
