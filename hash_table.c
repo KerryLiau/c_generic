@@ -34,7 +34,6 @@ typedef union
 typedef struct HashTableItem
 {
     char *key;
-    // char *value;
     HashItem *value;
     int type;
 } HashTableItem;
@@ -98,7 +97,7 @@ static HashTableItem* _New_Str_HashTableItem(const char *key, const char *val)
     return _New_HashTableItem(key, VAL_TYPE_STR, str_value);
 }
 
-static HashTableItem* New_Int_HashTableItem(const char *key, int val) 
+static HashTableItem* _New_Int_HashTableItem(const char *key, int val) 
 {
     HashItem *value = (HashItem*) malloc(sizeof(HashItem));
     int *int_val = (int*) malloc(sizeof(int));
@@ -280,7 +279,7 @@ static int _NeedResize(HashTable *table)
     return priv->modified_count * 100 / priv->bucket_size > priv->resize_threshold;
 }
 
-static inline void _EnsureTableSize(HashTable *table)
+static inline void _EnsureBucketSize(HashTable *table)
 {
     if (_NeedResize(table)) 
     {
@@ -430,35 +429,35 @@ void Delete_HashTable(HashTable **p_to_table)
 
 void HashTable_Add_Str(HashTable *table, const char *key, const char *value)
 {
-    _EnsureTableSize(table);
+    _EnsureBucketSize(table);
     HashTableItem *new_item = _New_Str_HashTableItem(key, value);
     _AddItem(table, new_item);
 }
 
 void HashTable_Add_Int(HashTable *table, const char *key, int value)
 {
-    _EnsureTableSize(table);
-    HashTableItem *new_item = New_Int_HashTableItem(key, value);
+    _EnsureBucketSize(table);
+    HashTableItem *new_item = _New_Int_HashTableItem(key, value);
     _AddItem(table, new_item);
 }
 
 void HashTable_Add_Long(HashTable *table, const char *key, long value)
 {
-    _EnsureTableSize(table);
+    _EnsureBucketSize(table);
     HashTableItem *new_item = _New_Long_HashTableItem(key, value);
     _AddItem(table, new_item);
 }
 
 void HashTable_Add_Double(HashTable *table, const char *key, double value)
 {
-    _EnsureTableSize(table);
+    _EnsureBucketSize(table);
     HashTableItem *new_item = _New_Double_HashTableItem(key, value);
     _AddItem(table, new_item);
 }
 
 void HashTable_Add_Float(HashTable *table, const char *key, float value)
 {
-    _EnsureTableSize(table);
+    _EnsureBucketSize(table);
     HashTableItem *new_item = _New_Float_HashTableItem(key, value);
     _AddItem(table, new_item);
 }
@@ -530,7 +529,7 @@ void HashTable_Delete(HashTable *table, const char *key)
         break;
     }
 
-    _EnsureTableSize(table);
+    _EnsureBucketSize(table);
 }
 
 inline int HashTable_Size(HashTable *table)
