@@ -5,7 +5,7 @@
 #include "hash_table.h"
 #include "string_builder.h"
 
-void HashTable_Simple_Test()
+void HashTable_Simple_Test(void)
 {
     printf("\n\nBegin test HashTable\n");
     HashTable* table = New_HashTable();
@@ -14,19 +14,19 @@ void HashTable_Simple_Test()
     printf("\nlet's try add key value in map\n");
     const char *key = "Hello";
     const char *value = "World";
-    HashTable_Put(table, key, value);
+    HashTable_Add(table, key, value);
 
     char *v = HashTable_Find_Str(table, key);
     printf("the key is '%s', and the value is '%s'\n", key, v);
     int count = HashTable_Size(table);
     printf("now the map size is: %d\n", count);
 
-    char *table_str = HashTable_ToString(table);
+    char *table_str = HashTable_ToJsonStr(table);
     printf("the hash map now looks like: %s\n", table_str);
 
     printf("\nlet's try update value stored in key %s\n", key);
     const char *new_value = "I'm Kerry";
-    HashTable_Put(table, key, new_value);
+    HashTable_Add(table, key, new_value);
     v = HashTable_Find_Str(table, key);
     if (strcmp(v, new_value) == count)
     {
@@ -42,7 +42,7 @@ void HashTable_Simple_Test()
         printf("the value from hash table is the same as input \n");
     }
 
-    table_str = HashTable_ToString(table);
+    table_str = HashTable_ToJsonStr(table);
     printf("the hash map now looks like: %s\n", table_str);
     free(table_str);
 
@@ -70,24 +70,24 @@ void HashTable_Simple_Test()
 void HashTable_Resize_Test()
 {
     printf("\n\nNow, let's try put and delete more intensively\n");
-    HashTable *table = New_HashTable();
+    HashTable *table = New_HashTable_WithBucketSize(200);
     StringBuilder *key_builder = New_StringBuilder();
     StringBuilder *value_builder = New_StringBuilder();
 
-    int count = 100;
+    int count = 10;
     printf("First, let's put %d element in table\n", count);
     for (size_t i = 0; i < count; i++)
     {
         StringBuilder_Append(key_builder, (int) i);
         StringBuilder_Append(value_builder, (int) i);
-        HashTable_Put_Str(
+        HashTable_Add_Str(
             table, StringBuilder_Value(key_builder), StringBuilder_Value(value_builder)
         );
         StringBuilder_Clear(key_builder);
         StringBuilder_Clear(value_builder);
     }
     printf("finished, now the table size is %d\n", HashTable_Size(table));
-    char *table_str1 = HashTable_ToString(table);
+    char *table_str1 = HashTable_ToIndentJsonStr(table);
     printf("now the table looks like below:\n%s\n", table_str1);
     free(table_str1);
     printf("Second, let's delete all element in table\n");
@@ -102,7 +102,7 @@ void HashTable_Resize_Test()
     char *table_str;
     if (HashTable_IsEmpty(table))
     {
-        table_str = HashTable_ToString(table);
+        table_str = HashTable_ToJsonStr(table);
         printf("now the table is empty, and looks like this: %s\n", table_str);
         free(table_str);
     }
@@ -111,7 +111,7 @@ void HashTable_Resize_Test()
     Delete_StringBuilder(&value_builder);
 }
 
-void Time_Test()
+void Time_Test(void)
 {
     time_t begin, end;
     begin = clock();
@@ -119,33 +119,41 @@ void Time_Test()
     HashTable_Resize_Test();
     end = clock();
     double period = end - begin;
-    printf("time cost: %f\n", period / CLOCKS_PER_SEC);
+    printf("elapsed milli seconds: %f\n", period / CLOCKS_PER_SEC * 1000);
 }
 
-void Generic_Test()
+void Generic_Test(void)
 {
+    printf("\n\nBegin HashTable generic value test\n");
     HashTable *table = New_HashTable();
-    HashTable_Put(table, "intVal", 26);
-    HashTable_Put(table, "strVal", "foo");
+    HashTable_Add(table, "intVal", 26);
+    HashTable_Add(table, "strVal", "foo");
     printf("strVal: %s\n", HashTable_Find_Str(table, "strVal"));
     printf("intVal: %d\n", *HashTable_Find_Int(table, "intVal"));
     int *ss = HashTable_Find_Int(table, "ss");
     if (!ss) printf("ss is NULL\n");
     else printf("intVal: %d\n", *ss);
+    printf("%s\n", HashTable_ToJsonStr(table));
+    Delete_HashTable(&table);
 }
 
-void Dynamic_Type()
+void Dynamic_Type(void)
 {
+    printf("\n\nBegin HashTable dynamic value type test\n");
     HashTable *table = New_HashTable();
-    HashTable_Put(table, "val", 26);
+    HashTable_Add(table, "val", 26);
     printf("%d\n", *HashTable_Find_Int(table, "val"));
-    HashTable_Put(table, "val", "AAA");
+    HashTable_Add(table, "val", "AAA");
     printf("%s\n", HashTable_Find_Str(table, "val"));
+    HashTable_Add(table, "val", 5.56);
+    printf("%f\n", *HashTable_Find_Double(table, "val"));
+    printf("%s\n", HashTable_ToJsonStr(table));
+    Delete_HashTable(&table);
 }
 
-int main() 
+int main(void) 
 {
-    // Time_Test();
-    // Generic_Test();
+    Time_Test();
+    Generic_Test();
     Dynamic_Type();
 }

@@ -10,7 +10,7 @@ struct StringBuilder_Private
     char *value;
 };
 
-StringBuilder* New_StringBuilder()
+StringBuilder* New_StringBuilder(void)
 {
     StringBuilder *sb = (StringBuilder*) malloc(sizeof(StringBuilder));
     StringBuilder_Private *priv = (StringBuilder_Private*) malloc(sizeof(StringBuilder_Private));

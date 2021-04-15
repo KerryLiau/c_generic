@@ -27,10 +27,10 @@ void StringBuilder_AppendFloat(StringBuilder *sb, float f);
 void StringBuilder_AppendDouble(StringBuilder *sb, double d);
 
 // 建構子
-StringBuilder* New_StringBuilder();
+StringBuilder* New_StringBuilder(void);
 
 // 解構子
-void Delete_StringBuilder();
+void Delete_StringBuilder(StringBuilder **p_sb);
 
 /*
  * 清空 StringBuilder 中的字串內容
