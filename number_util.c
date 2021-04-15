@@ -1,9 +1,12 @@
 #include "math.h"
 #include "number_util.h"
 
+// ================================================================================
+// Private Properties
+// ================================================================================
 static long INT_MAX = 0xFFFFFFFF;
 
-static long NumberUtil_Next_PO2(int input, int pow_number)
+static long _Next_PowerOf2(int input, int pow_number)
 {
     int result = (long) pow(2, pow_number);
     if (result > input)
@@ -15,10 +18,10 @@ static long NumberUtil_Next_PO2(int input, int pow_number)
         // Integer 的最大正整數
         return INT_MAX;
     }
-    return NumberUtil_Next_PO2(input, pow_number + 1);
+    return _Next_PowerOf2(input, pow_number + 1);
 }
 
-static int NumberUtil_IsPrime(int input)
+static int _IsPrime(int input)
 {
     if (input == 0 || input % 2 == 0) return 0;
     if (input < 9) return 1;
@@ -32,14 +35,17 @@ static int NumberUtil_IsPrime(int input)
     return 1;
 }
 
+// ================================================================================
+// Public properties
+// ================================================================================
 long NumberUtil_NextPowerOf_2(int input)
 {
     int pow_number = 1;
-    return NumberUtil_Next_PO2(input, pow_number);
+    return _Next_PowerOf2(input, pow_number);
 }
 
 long NumberUtil_NextPrime(int input)
 {
-    if (NumberUtil_IsPrime(input)) return input;
+    if (_IsPrime(input)) return input;
     return NumberUtil_NextPrime(input + 1);
 }
