@@ -2,6 +2,7 @@
 #include "string.h"
 #include "stdio.h"
 #include "string_builder.h"
+#include "common_util.h"
 #include "number_util.h"
 
 // ================================================================================
@@ -24,7 +25,7 @@ static void _CheckSpace(StringBuilder* sb, int len)
         char *new_val = (char*) calloc(new_max, sizeof(char));
         if (!new_val)
         {
-            printf("New StringBuilder value malloc failed\n");
+            s_out("New StringBuilder value malloc failed");
         }
         strcpy(new_val, old_val);
         free(old_val);

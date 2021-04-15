@@ -4,78 +4,79 @@
 #include <time.h>
 #include "hash_table.h"
 #include "string_builder.h"
+#include "common_util.h"
 
 void HashTable_Simple_Test(void)
 {
-    printf("\n\nBegin test HashTable\n");
+    s_out("\n\nBegin test HashTable");
     HashTable* table = New_HashTable();
-    printf("the hash table address: '%p' \n", table);
+    s_out_f("the hash table address: '%p'", table);
     
-    printf("\nlet's try add key value in map\n");
+    s_out("\nlet's try add key value in map");
     const char *key = "Hello";
     const char *value = "World";
     HashTable_Add(table, key, value);
 
     char *v = HashTable_Find_Str(table, key);
-    printf("the key is '%s', and the value is '%s'\n", key, v);
+    s_out_f("the key is '%s', and the value is '%s'", key, v);
     int count = HashTable_Size(table);
-    printf("now the map size is: %d\n", count);
+    s_out_f("now the map size is: %d", count);
 
     char *table_str = HashTable_ToJsonStr(table);
-    printf("the hash map now looks like: %s\n", table_str);
+    s_out_f("the hash map now looks like: %s", table_str);
 
-    printf("\nlet's try update value stored in key %s\n", key);
+    s_out_f("\nlet's try update value stored in key %s", key);
     const char *new_value = "I'm Kerry";
     HashTable_Add(table, key, new_value);
     v = HashTable_Find_Str(table, key);
     if (strcmp(v, new_value) == count)
     {
-        printf("now the value stored in '%s' has change to '%s'\n", key, new_value);
+        s_out_f("now the value stored in '%s' has change to '%s'", key, new_value);
     }
     if (HashTable_Size(table) == 1)
     {
-        printf("and the map count is still the same\n");
+        s_out("and the map count is still the same");
     }
 
     if (strcmp(value, v) == 0)
     {
-        printf("the value from hash table is the same as input \n");
+        s_out("the value from hash table is the same as input");
     }
 
     table_str = HashTable_ToJsonStr(table);
-    printf("the hash map now looks like: %s\n", table_str);
+    s_out_f("the hash map now looks like: %s", table_str);
     free(table_str);
 
-    printf("\nlet's try remove key %s\n", key);
+    s_out_f("\nlet's try remove key %s", key);
     HashTable_Delete(table, key);
-    printf("the map size is: %d\n", HashTable_Size(table));
+    s_out_f("the map size is: %d", HashTable_Size(table));
     v = HashTable_Find_Str(table, key);
     if (v == NULL)
     {
-        printf("the key %s is now removed \n", key);
+        s_out_f("the key %s is now removed", key);
     }
     
-    printf("\nlet's try destruct table %p\n", table);
+    s_out_f("\nlet's try destruct table %p", table);
     Delete_HashTable(&table);
     if (table == NULL)
     {
-        printf("the table was delete successfully, now the address is '%p'\n", table);
+        s_out_f("the table was delete successfully, now the address is '%p'", table);
     }
     else 
     {
-        printf("the table was failed to delete, now the address is: '%p'\n", table);
+        s_out_f("the table was failed to delete, now the address is: '%p'", table);
     }
 }
 
 void HashTable_Resize_Test()
 {
-    printf("\n\nNow, let's try put and delete more intensively\n");
+    s_out("\n\nNow, let's try put and delete more intensively");
     HashTable *table = New_HashTable_WithBucketSize(200);
     StringBuilder *key_builder = New_StringBuilder();
     StringBuilder *value_builder = New_StringBuilder();
 
     int count = 100;
-    printf("First, let's put %d element in table\n", count);
+    s_out_f("First, let's put %d element in table", count);
     for (size_t i = 0; i < count; i++)
     {
         StringBuilder_Append(key_builder, (int) i);
@@ -87,12 +88,12 @@ void HashTable_Resize_Test()
         StringBuilder_Clear(value_builder);
     }
 
-    printf("finished, now the table size is %d\n", HashTable_Size(table));
+    s_out_f("finished, now the table size is %d", HashTable_Size(table));
     char *table_str1 = HashTable_ToJsonStr(table);
-    printf("now the table looks like below:\n%s\n", table_str1);
+    s_out_f("now the table looks like below:\n%s", table_str1);
     free(table_str1);
 
-    printf("Second, let's delete all element in table\n");
+    s_out("Second, let's delete all element in table");
     for (size_t i = 0; i < count; i++)
     {
         StringBuilder_Append(key_builder, (int) i);
@@ -106,7 +107,7 @@ void HashTable_Resize_Test()
     if (HashTable_IsEmpty(table))
     {
         table_str = HashTable_ToJsonStr(table);
-        printf("now the table is empty, and looks like this: %s\n", table_str);
+        s_out_f("now the table is empty, and looks like this: %s", table_str);
         free(table_str);
     }
 
@@ -125,43 +126,49 @@ void Time_Test(void)
     end = clock();
 
     double period = end - begin;
-    printf("elapsed milli seconds: %f\n", period / CLOCKS_PER_SEC * 1000);
+    s_out_f("elapsed milli seconds: %f", period / CLOCKS_PER_SEC * 1000);
 }
 
 void Generic_Test(void)
 {
-    printf("\n\nBegin HashTable generic value test\n");
+    s_out("\n\nBegin HashTable generic value test");
 
     HashTable *table = New_HashTable();
     HashTable_Add(table, "intVal", 26);
     HashTable_Add(table, "strVal", "foo");
 
-    printf("strVal: %s\n", HashTable_Find_Str(table, "strVal"));
-    printf("intVal: %d\n", *HashTable_Find_Int(table, "intVal"));
+    s_out_f("strVal: %s", HashTable_Find_Str(table, "strVal"));
+    s_out_f("intVal: %d", *HashTable_Find_Int(table, "intVal"));
 
     int *ss = HashTable_Find_Int(table, "ss");
-    if (!ss) printf("ss is NULL\n");
-    else printf("intVal: %d\n", *ss);
-    printf("%s\n", HashTable_ToIndentJsonStr(table));
+    if (!ss) 
+    {
+        s_out("ss is NULL");
+    }
+    else 
+    {
+        s_out_f("intVal: %d", *ss);
+    }
+    s_out_f("%s", HashTable_ToIndentJsonStr(table));
 
     Delete_HashTable(&table);
 }
 
 void Dynamic_Type(void)
 {
-    printf("\n\nBegin HashTable dynamic value type test\n");
+    s_out("\n\nBegin HashTable dynamic value type test");
 
     HashTable *table = New_HashTable();
     HashTable_Add(table, "val", 26);
-    printf("%d\n", *HashTable_Find_Int(table, "val"));
+    s_out_f("%d", *HashTable_Find_Int(table, "val"));
 
     HashTable_Add(table, "val", "AAA");
-    printf("%s\n", HashTable_Find_Str(table, "val"));
+    s_out_f("%s", HashTable_Find_Str(table, "val"));
 
     HashTable_Add(table, "val", 5.56);
-    printf("%f\n", *HashTable_Find_Double(table, "val"));
+    s_out_f("%f", *HashTable_Find_Double(table, "val"));
 
-    printf("%s\n", HashTable_ToIndentJsonStr(table));
+    s_out_f("%s", HashTable_ToIndentJsonStr(table));
     Delete_HashTable(&table);
 }
 

@@ -4,13 +4,14 @@
 #include <math.h>
 
 #include "hash_table.h"
+#include "common_util.h"
 #include "string_builder.h"
 #include "number_util.h"
 
 // ================================================================================
 // Private Properties
 // ================================================================================
-#define out printf
+// 判定映射物件的型別用
 #define VAL_TYPE_STR 0X0
 #define VAL_TYPE_INT 0X1
 #define VAL_TYPE_LONG 0X2
@@ -31,7 +32,7 @@ typedef union
     double *d_val;
 } HashItem;
 
-typedef struct HashTableItem
+typedef struct
 {
     char *key;
     HashItem *value;
@@ -65,19 +66,25 @@ struct HashTable_Private
 };
 
 // 作為雜湊運算用的常數
-static int HASH_ARG_PRIME_1 = 0X83;
-static int HASH_ARG_PRIME_2 = 0X1f;
-static int DEFAULT_SIZE = 0X1f;
-static int DEFAULT_THRESHOLD = 0X4b;
+static const int HASH_ARG_PRIME_1 = 0X83;
+static const int HASH_ARG_PRIME_2 = 0X1f;
+static const int DEFAULT_SIZE = 0X1f;
+static const int DEFAULT_THRESHOLD = 0X4b;
 
 // 作為判定已刪除的物件
 static HashTableItem HT_DELETED_ITEM = {NULL, NULL, 0};
 
+// 序列化用常數
 static const char *QUOTE = "\"";
 static const char *COLON = ":";
 static const char *DELIMITER = ",";
 static const char *BEGIN = "{";
 static const char *END = "}";
+static const char *INDENT = "  ";
+
+// 判定序列化時，是否需要縮排
+static const int NEED_INDENT = true;
+static const int NO_NEED_INDENT = false;
 
 static HashTableItem* _New_HashTableItem(const char *key, int val_type, HashItem *val)
 {
@@ -221,7 +228,7 @@ static void _AddItem(HashTable *table, HashTableItem *new_item)
     int index, addition;
     
     addition = 0;
-    while (1)
+    while (true)
     {
         index = _Get_HashValue(new_item->key, priv->bucket_size, addition);
         item = priv->items[index];
@@ -252,7 +259,7 @@ static void _Resize(HashTable *table)
     HashTable *temp_table = _New_HashTable(new_size, curr_priv->resize_threshold);
     if (!temp_table) 
     {
-        printf("malloc new HashTable failed...\n");
+        s_out("malloc new HashTable failed...");
     }
 
     for (size_t i = 0; i < curr_priv->bucket_size; i++)
@@ -294,7 +301,7 @@ static HashTableItem* _Find(HashTable *table, const char *key)
     int index, addition;
 
     addition = 0;
-    while (1)
+    while (true)
     {
         index = _Get_HashValue(key, priv->bucket_size, addition);
         item = priv->items[index];
@@ -513,7 +520,7 @@ void HashTable_Delete(HashTable *table, const char *key)
     int index, addition;
 
     addition = 0;
-    while (1)
+    while (true)
     {
         index = _Get_HashValue(key, priv->bucket_size, addition);
         item = priv->items[index];
@@ -532,7 +539,7 @@ void HashTable_Delete(HashTable *table, const char *key)
     _EnsureBucketSize(table);
 }
 
-inline int HashTable_Size(HashTable *table)
+int HashTable_Size(HashTable *table)
 {
     return table->priv->item_count;
 }
@@ -544,11 +551,11 @@ inline int HashTable_IsEmpty(HashTable *table)
 
 char* HashTable_ToJsonStr(HashTable *table)
 {
-    return _ToJsonString(table, 0);
+    return _ToJsonString(table, NO_NEED_INDENT);
 }
 
 char* HashTable_ToIndentJsonStr(HashTable *table)
 {
-    return _ToJsonString(table, 1);
+    return _ToJsonString(table, NEED_INDENT);
 }
 
