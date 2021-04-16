@@ -70,36 +70,32 @@ void HashTable_Simple_Test(void)
 
 void HashTable_Resize_Test()
 {
-    s_out("\n\nNow, let's try put and delete more intensively");
-    HashTable *table = New_HashTable_WithBucketSize(200);
+    s_out("\n\nNow, let's try put and delete more intensively\n");
     StringBuilder *key_builder = New_StringBuilder();
-    StringBuilder *value_builder = New_StringBuilder();
 
-    int count = 100;
-    s_out_f("First, let's put %d element in table", count);
+    int count = 100 * 100 * 100;
+    s_out_f(
+        "First, let's put %d element in table, key is from 1999999999 to %d", count, 1999999999 + (count - 1)
+    );
+    s_out("and add something like '_Something_As_Suffix' as key suffix\n");
+    s_out("if you're going to put very large amount into hash table, for better performance, you may set map init bucket size");
+    HashTable *table = New_HashTable_WithBucketSize(count * 2);
+    
     for (size_t i = 0; i < count; i++)
     {
-        StringBuilder_Append(key_builder, (int) i);
-        StringBuilder_Append(value_builder, (int) i);
-        HashTable_Add_Str(
-            table, StringBuilder_Value(key_builder), StringBuilder_Value(value_builder)
-        );
+        StringBuilder_Append(key_builder, (int) i + 1999999999);
+        StringBuilder_Append(key_builder, "_Something_As_Suffix");
+        HashTable_Add(table, StringBuilder_Value(key_builder), (int) i);
         StringBuilder_Clear(key_builder);
-        StringBuilder_Clear(value_builder);
     }
 
-    s_out_f("finished, now the table size is %d", HashTable_Size(table));
-    char *table_str1 = HashTable_ToJsonStr(table);
-    s_out_f("now the table looks like below:\n%s", table_str1);
-    free(table_str1);
-
-    s_out("Second, let's delete all element in table");
+    s_out_f("finished, now the table size is %d, but the table is too large to print, let's just skip that", HashTable_Size(table));
+    s_out("Second, let's delete all element in table\n");
     for (size_t i = 0; i < count; i++)
     {
-        StringBuilder_Append(key_builder, (int) i);
-        HashTable_Delete(
-            table, StringBuilder_Value(key_builder)
-        );
+        StringBuilder_Append(key_builder, (int) i + 1999999999);
+        StringBuilder_Append(key_builder, "_Something_As_Suffix");
+        HashTable_Delete(table, StringBuilder_Value(key_builder));
         StringBuilder_Clear(key_builder);
     }
 
@@ -113,7 +109,6 @@ void HashTable_Resize_Test()
 
     Delete_HashTable(&table);
     Delete_StringBuilder(&key_builder);
-    Delete_StringBuilder(&value_builder);
 }
 
 void Time_Test(void)
@@ -136,6 +131,7 @@ void Generic_Test(void)
     HashTable *table = New_HashTable();
     HashTable_Add(table, "intVal", 26);
     HashTable_Add(table, "strVal", "foo");
+    HashTable_Add(table, "const char *str", "*str");
 
     s_out_f("strVal: %s", HashTable_Find_Str(table, "strVal"));
     s_out_f("intVal: %d", *HashTable_Find_Int(table, "intVal"));
@@ -149,31 +145,39 @@ void Generic_Test(void)
     {
         s_out_f("intVal: %d", *ss);
     }
-    s_out_f("%s", HashTable_ToIndentJsonStr(table));
 
+    char *json_str = HashTable_ToIndentJsonStr(table);
+    s_out_f("%s", json_str);
+    free(json_str);
     Delete_HashTable(&table);
 }
 
 void Dynamic_Type(void)
 {
-    s_out("\n\nBegin HashTable dynamic value type test");
+    s_out("\n\nBegin HashTable dynamic value type test\n");
 
     HashTable *table = New_HashTable();
+    s_out("map key 'val' with 26");
     HashTable_Add(table, "val", 26);
-    s_out_f("%d", *HashTable_Find_Int(table, "val"));
+    s_out_f("the key 'val' correspond value is: %d\n", *HashTable_Find_Int(table, "val"));
 
+    s_out("map key 'val' with 'AAA'");
     HashTable_Add(table, "val", "AAA");
-    s_out_f("%s", HashTable_Find_Str(table, "val"));
+    s_out_f("the key 'val' correspond value is: %s\n", HashTable_Find_Str(table, "val"));
 
+    s_out("map key 'val' with 5.56");
     HashTable_Add(table, "val", 5.56);
-    s_out_f("%f", *HashTable_Find_Double(table, "val"));
+    s_out_f("the key 'val' correspond value is: %f\n", *HashTable_Find_Double(table, "val"));
 
-    s_out_f("%s", HashTable_ToIndentJsonStr(table));
+    char *json_str = HashTable_ToIndentJsonStr(table);
+    s_out_f("%s", json_str);
+    free(json_str);
     Delete_HashTable(&table);
 }
 
 int main(void)
 {
+    HashTable_Simple_Test();
     Time_Test();
     Generic_Test();
     Dynamic_Type();

@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "hash_table.h"
 #include "common_util.h"
+#include "hash_table.h"
 #include "string_builder.h"
 #include "number_util.h"
 
@@ -69,7 +69,7 @@ struct HashTable_Private
 static const int HASH_ARG_PRIME_1 = 0X83;
 static const int HASH_ARG_PRIME_2 = 0X1f;
 static const int DEFAULT_SIZE = 0X1f;
-static const int DEFAULT_THRESHOLD = 0X4b;
+static const int DEFAULT_THRESHOLD = 0X50;
 
 // 作為判定已刪除的物件
 static HashTableItem HT_DELETED_ITEM = {NULL, NULL, 0};
@@ -177,9 +177,12 @@ static int _Calculate_StringHash(const char *str, const int hash_arg)
     const int str_len = strlen(str);
     for (size_t i = 0; i < str_len; i++)
     {
-        hash = str[i] * hash_arg ^ (str_len - 1);
+        hash <<= 6;
+        hash += str[i] * hash_arg ^ (str_len - 1);
+        hash ^= (hash >> 16) ^ (hash >> 8);
     }
-    return (int) hash;
+    hash ^= (hash >> 24) ^ (hash >> 12);
+    return (int) hash ^ (hash >> 8) ^ (hash >> 4);
 }
 
 static int _Get_HashValue(const char *str, const int max_val, const int addition)
@@ -192,6 +195,7 @@ static int _Get_HashValue(const char *str, const int max_val, const int addition
     result += result % max_val;
     result += addition;
     result %= max_val;
+    if (result < 0) result = ~result;
 
     return result;
 }
@@ -544,7 +548,7 @@ int HashTable_Size(HashTable *table)
     return table->priv->item_count;
 }
 
-inline int HashTable_IsEmpty(HashTable *table)
+inline bool HashTable_IsEmpty(HashTable *table)
 {
     return HashTable_Size(table) == 0;
 }

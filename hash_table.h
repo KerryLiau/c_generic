@@ -1,6 +1,8 @@
 #ifndef HASH_TABLE_H
 #define HASH_TABLE_H
 
+#include "common_util.h"
+
 /**
  * 映射表的私有屬性，裡面的屬性：
  * 
@@ -124,6 +126,6 @@ int HashTable_Size(HashTable *table);
  * 得知映射表當前是否無任何物件，
  * 0 = false, 1 = true
  */
-int HashTable_IsEmpty(HashTable *table);
+bool HashTable_IsEmpty(HashTable *table);
 
 #endif

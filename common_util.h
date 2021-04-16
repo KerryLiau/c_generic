@@ -1,6 +1,10 @@
 #ifndef BOOLEAN_H
 #define BOOLEAN_H
 
+/**
+ * 增進可讀性用，並非型別安全
+ */
+#define bool int
 #define true 1
 #define false 0
 

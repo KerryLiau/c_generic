@@ -1,5 +1,6 @@
 #include "math.h"
 #include "number_util.h"
+#include "common_util.h"
 
 // ================================================================================
 // Private Properties
@@ -21,18 +22,18 @@ static long _Next_PowerOf2(int input, int pow_number)
     return _Next_PowerOf2(input, pow_number + 1);
 }
 
-static int _IsPrime(int input)
+static bool _IsPrime(int input)
 {
-    if (input == 0 || input % 2 == 0) return 0;
-    if (input < 9) return 1;
+    if (input == 0 || input % 2 == 0) return false;
+    if (input < 9) return true;
     int max = floor(sqrt((double) input));
     int i = 3;
     while (i < max)
     {
-        if (input % i == 0) return 0;
+        if (input % i == 0) return false;
         i += 2;
     }
-    return 1;
+    return true;
 }
 
 // ================================================================================
