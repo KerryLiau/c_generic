@@ -66,10 +66,9 @@ struct HashTable_Private
 };
 
 // 作為雜湊運算用的常數
-static const int HASH_ARG_PRIME_1 = 0X83;
-static const int HASH_ARG_PRIME_2 = 0X1f;
+static const int HASH_ARG = 0X11;
 static const int DEFAULT_SIZE = 0X1f;
-static const int DEFAULT_THRESHOLD = 0X50;
+static const int DEFAULT_LOAD_FACTOR = 0X50;
 
 // 作為判定已刪除的物件
 static HashTableItem HT_DELETED_ITEM = {NULL, NULL, 0};
@@ -187,17 +186,10 @@ static int _Calculate_StringHash(const char *str, const int hash_arg)
 
 static int _Get_HashValue(const char *str, const int max_val, const int addition)
 {
-    int hash_a, hash_b, result;
-    hash_a = _Calculate_StringHash(str, HASH_ARG_PRIME_1);
-    hash_b = _Calculate_StringHash(str, HASH_ARG_PRIME_2);
-
-    result = hash_a + hash_b;
-    result += result % max_val;
-    result += addition;
-    result %= max_val;
+    int result = _Calculate_StringHash(str, HASH_ARG);
     if (result < 0) result = ~result;
 
-    return result;
+    return (result + addition) % max_val;
 }
 
 static inline int _IsAbandoned(HashTableItem *item)
@@ -407,17 +399,17 @@ static char* _ToJsonString(HashTable *table, int need_indent)
 // ================================================================================
 HashTable* New_HashTable(void) 
 {
-    return _New_HashTable(DEFAULT_SIZE, DEFAULT_THRESHOLD);
+    return _New_HashTable(DEFAULT_SIZE, DEFAULT_LOAD_FACTOR);
 }
 
 HashTable* New_HashTable_WithBucketSize(int size) 
 {
-    return _New_HashTable(size, DEFAULT_THRESHOLD);
+    return _New_HashTable(size, DEFAULT_LOAD_FACTOR);
 }
 
-HashTable* New_HashTable_WithBucketSizeAndThreshold(int size, int threshold)
+HashTable* New_HashTable_WithBucketSizeAndLoadFactor(int size, int load_factor)
 {
-    return _New_HashTable(size, threshold);
+    return _New_HashTable(size, load_factor);
 }
 
 void Delete_HashTable(HashTable **p_to_table) 

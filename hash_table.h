@@ -29,7 +29,7 @@ typedef struct
 } HashTable;
 
 /**
- * 建構映射表，大小、重構臨界點都是預設的
+ * 建構映射表，大小、負載係數都是預設的
  */
 HashTable* New_HashTable(void);
 
@@ -39,9 +39,9 @@ HashTable* New_HashTable(void);
 HashTable* New_HashTable_WithBucketSize(int size);
 
 /**
- * 建構指定預設大小、重構臨界點的映射表
+ * 建構指定預設大小、負載係數的映射表
  */
-HashTable* New_HashTable_WithBucketSizeAndThreshold(int size, int threshold);
+HashTable* New_HashTable_WithBucketSizeAndLoadFactor(int size, int load_factor);
 
 /**
  * 解構映射表

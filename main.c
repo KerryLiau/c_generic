@@ -77,24 +77,27 @@ void HashTable_Resize_Test()
     s_out_f(
         "First, let's put %d element in table, key is from 1999999999 to %d", count, 1999999999 + (count - 1)
     );
-    s_out("and add something like '_Something_As_Suffix' as key suffix\n");
+    s_out("to increase calculate complexity, we add prefix and suffix");
+    s_out("'Prefix_' as static prefix, and '_Suffix' as static key suffix\n");
     s_out("if you're going to put very large amount into hash table, for better performance, you may set map init bucket size");
     HashTable *table = New_HashTable_WithBucketSize(count * 2);
     
-    for (size_t i = 0; i < count; i++)
+    for (int i = 0; i < count; i++)
     {
-        StringBuilder_Append(key_builder, (int) i + 1999999999);
-        StringBuilder_Append(key_builder, "_Something_As_Suffix");
+        StringBuilder_Append(key_builder, "Prefix_");
+        StringBuilder_Append(key_builder, i + 1999999999);
+        StringBuilder_Append(key_builder, "_Suffix");
         HashTable_Add(table, StringBuilder_Value(key_builder), (int) i);
         StringBuilder_Clear(key_builder);
     }
 
     s_out_f("finished, now the table size is %d, but the table is too large to print, let's just skip that", HashTable_Size(table));
     s_out("Second, let's delete all element in table\n");
-    for (size_t i = 0; i < count; i++)
+    for (int i = 0; i < count; i++)
     {
-        StringBuilder_Append(key_builder, (int) i + 1999999999);
-        StringBuilder_Append(key_builder, "_Something_As_Suffix");
+        StringBuilder_Append(key_builder, "Prefix_");
+        StringBuilder_Append(key_builder, i + 1999999999);
+        StringBuilder_Append(key_builder, "_Suffix");
         HashTable_Delete(table, StringBuilder_Value(key_builder));
         StringBuilder_Clear(key_builder);
     }
@@ -114,8 +117,8 @@ void HashTable_Resize_Test()
 void Time_Test(void)
 {
     time_t begin, end;
-    begin = clock();
 
+    begin = clock();
     HashTable_Simple_Test();
     HashTable_Resize_Test();
     end = clock();
@@ -177,7 +180,6 @@ void Dynamic_Type(void)
 
 int main(void)
 {
-    HashTable_Simple_Test();
     Time_Test();
     Generic_Test();
     Dynamic_Type();
