@@ -8,7 +8,7 @@
 
 void HashTable_Simple_Test(void)
 {
-    s_out("\n\nBegin test HashTable");
+    s_out("\n\nBegin basic test HashTable");
     HashTable* table = New_HashTable();
     s_out_f("the hash table address: '%p'", table);
     
@@ -54,6 +54,19 @@ void HashTable_Simple_Test(void)
     if (v == NULL)
     {
         s_out_f("the key %s is now removed", key);
+    }
+
+    s_out("\nlet's test function 'HashTable_HasKey'");
+    s_out("first check key 'foo' that currently not exist in table");
+    if (!HashTable_HasKey(table, "foo"))
+    {
+        s_out("OK, the result is: key 'foo' not in table yet");
+    }
+    s_out("next put 'foo' into table, link it with value 'bar', and check again");
+    HashTable_Add(table, "foo", "bar");
+    if (HashTable_HasKey(table, "foo"))
+    {
+        s_out_f("the result is: key 'foo' is in table, the value is %s", HashTable_Find_Str(table, "foo"));
     }
     
     s_out_f("\nlet's try destruct table %p", table);
@@ -178,9 +191,38 @@ void Dynamic_Type(void)
     Delete_HashTable(&table);
 }
 
+void NestStructure_Test()
+{
+    s_out("\n\nBegin test nest structure\n");
+
+    s_out("let's create table 1,2,3");
+    HashTable *table1 = New_HashTable();
+    HashTable *table2 = New_HashTable();
+    HashTable *table3 = New_HashTable();
+
+    s_out("and put table 2 into table 1, then table 3 into table 2");
+    HashTable_Add(table1, "map", table2);
+    HashTable_Add(table2, "map2", table3);
+
+    s_out("put some other element into table 1,2,3");
+    HashTable_Add(table1, "My name is", "Table 1");
+    HashTable_Add(table2, "My name is", "Table 2");
+    HashTable_Add(table3, "My name is", "Table 3");
+
+    s_out("OK, let's see how table 1 looks like now:\n");
+    char *str = HashTable_ToIndentJsonStr(table1);
+    s_out(str);
+    free(str);
+
+    s_out("\ntime for delete table, because 'Delete_HashTable' function will delete map recursive");
+    s_out("so we only need delete table 1");
+    Delete_HashTable(&table1);
+}
+
 int main(void)
 {
     Time_Test();
     Generic_Test();
     Dynamic_Type();
+    NestStructure_Test();
 }

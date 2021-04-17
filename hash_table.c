@@ -30,6 +30,7 @@ typedef union
     long *l_val;
     float *f_val;
     double *d_val;
+    HashTable *h_val;
 } HashItem;
 
 typedef struct
@@ -143,6 +144,14 @@ static HashTableItem* _New_Float_HashTableItem(const char *key, float val)
     return _New_HashTableItem(key, VAL_TYPE_FLOAT, value);
 }
 
+static HashTableItem* _New_Table_HashTableItem(const char *key, HashTable *val)
+{
+    HashItem *value = (HashItem*) malloc(sizeof(HashItem));
+    value->h_val = val;
+
+    return _New_HashTableItem(key, VAL_TYPE_MAP, value);
+}
+
 static void _Delete_HashTableItem(HashTableItem* item) 
 {
     free(item->key);
@@ -163,6 +172,9 @@ static void _Delete_HashTableItem(HashTableItem* item)
             break;
         case VAL_TYPE_FLOAT:
             free(item->value->f_val);
+            break;
+        case VAL_TYPE_MAP:
+            Delete_HashTable(&(item->value->h_val));
             break;
     }
 
@@ -312,11 +324,11 @@ static HashTableItem* _Find(HashTable *table, const char *key)
     return NULL;
 }
 
-static char* _ToJsonString(HashTable *table, int need_indent)
+static char* _ToJsonString(HashTable *table, int level, bool need_indent)
 {
     int counter, depth;
     counter = 0;
-    depth = 0;
+    depth = level;
     StringBuilder *builder = New_StringBuilder();
     StringBuilder_Append(builder, BEGIN);
 
@@ -346,8 +358,8 @@ static char* _ToJsonString(HashTable *table, int need_indent)
         StringBuilder_Append(builder, item->key);
         StringBuilder_Append(builder, QUOTE);
         StringBuilder_Append(builder, COLON);
-        
-        int is_str = item->type == VAL_TYPE_STR;
+
+        bool is_str = item->type == VAL_TYPE_STR;
         if (is_str) 
         {
             StringBuilder_Append(builder, QUOTE);
@@ -370,6 +382,14 @@ static char* _ToJsonString(HashTable *table, int need_indent)
             case VAL_TYPE_DOUBLE:
                 StringBuilder_Append(builder, *(item->value->d_val));
                 break;
+            case VAL_TYPE_MAP:
+            {
+                // s_out("there's a map !");
+                char *map_str = _ToJsonString((item->value->h_val), level + 1, need_indent);
+                StringBuilder_Append(builder, map_str);
+                free(map_str);
+                break;
+            }
         }
         
         if (is_str) 
@@ -465,6 +485,13 @@ void HashTable_Add_Float(HashTable *table, const char *key, float value)
     _AddItem(table, new_item);
 }
 
+void HashTable_Add_Table(HashTable *table, const char *key, HashTable *value)
+{
+    _EnsureBucketSize(table);
+    HashTableItem *new_item = _New_Table_HashTableItem(key, value);
+    _AddItem(table, new_item);
+}
+
 char* HashTable_Find_Str(HashTable *table, const char *key)
 {
     HashTableItem *item = _Find(table, key);
@@ -509,6 +536,15 @@ float* HashTable_Find_Float(HashTable *table, const char *key)
     return result;
 }
 
+HashTable* HashTable_Find_Table(HashTable *table, const char *key)
+{
+    HashTableItem *item = _Find(table, key);
+    if (!item || item->type != VAL_TYPE_MAP) return NULL;
+
+    HashTable *result = (item->value->h_val);
+    return result;
+}
+
 void HashTable_Delete(HashTable *table, const char *key)
 {
     HashTable_Private *priv = table->priv;
@@ -535,6 +571,12 @@ void HashTable_Delete(HashTable *table, const char *key)
     _EnsureBucketSize(table);
 }
 
+bool HashTable_HasKey(HashTable *table, const char *key)
+{
+    HashTableItem *item = _Find(table, key);
+    return _IsValid(item);
+}
+
 int HashTable_Size(HashTable *table)
 {
     return table->priv->item_count;
@@ -547,11 +589,11 @@ inline bool HashTable_IsEmpty(HashTable *table)
 
 char* HashTable_ToJsonStr(HashTable *table)
 {
-    return _ToJsonString(table, NO_NEED_INDENT);
+    return _ToJsonString(table, 0, NO_NEED_INDENT);
 }
 
 char* HashTable_ToIndentJsonStr(HashTable *table)
 {
-    return _ToJsonString(table, NEED_INDENT);
+    return _ToJsonString(table, 0, NEED_INDENT);
 }
 

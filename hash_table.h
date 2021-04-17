@@ -59,7 +59,8 @@ void Delete_HashTable(HashTable **table);
     int: HashTable_Add_Int,\
     long: HashTable_Add_Long,\
     double: HashTable_Add_Double,\
-    float: HashTable_Add_Float\
+    float: HashTable_Add_Float,\
+    HashTable*: HashTable_Add_Table\
 )(table, key, value)
 
 void HashTable_Add_Str(HashTable *table, const char *key, const char *value);
@@ -72,40 +73,53 @@ void HashTable_Add_Double(HashTable *table, const char *key, double value);
 
 void HashTable_Add_Float(HashTable *table, const char *key, float value);
 
+void HashTable_Add_Table(HashTable *table, const char *key, HashTable *value);
+
 /**
  * 在映射表中查找字串指標，
- * 如 *key 不存在，或查找出的值並非字串，將回傳 NULL
+ * 如 key 不存在，或查找出的值並非字串，將回傳 NULL
  */
 char* HashTable_Find_Str(HashTable *table, const char *key);
 
 /**
  * 在映射表中查找整數指標，
- * 如 *key 不存在，或查找出的值並非整數，將回傳 NULL
+ * 如 key 不存在，或查找出的值並非整數，將回傳 NULL
  */
 int* HashTable_Find_Int(HashTable *table, const char *key);
 
 /**
  * 在映射表中查找長整數指標，
- * 如 *key 不存在，或查找出的值並非長整數，將回傳 NULL
+ * 如 key 不存在，或查找出的值並非長整數，將回傳 NULL
  */
 long* HashTable_Find_Long(HashTable *table, const char *key);
 
 /**
  * 在映射表中查找雙經度浮點數指標，
- * 如 *key 不存在，或查找出的值並非雙經度浮點數，將回傳 NULL
+ * 如 key 不存在，或查找出的值並非雙經度浮點數，將回傳 NULL
  */
 double* HashTable_Find_Double(HashTable *table, const char *key);
 
 /**
  * 在映射表中查找單經度浮點數指標，
- * 如 *key 不存在，或查找出的值並非單經度浮點數，將回傳 NULL
+ * 如 key 不存在，或查找出的值並非單經度浮點數，將回傳 NULL
  */
 float* HashTable_Find_Float(HashTable *table, const char *key);
 
 /**
- * 移除映射表中 *key 對應到的物件，並將對應的位置標記為已棄用
+ * 在映射表中查找映射表，
+ * 如 key 不存在，或查找出的值並非映射表，將回傳 NULL
+ */
+HashTable* HashTable_Find_Table(HashTable *table, const char *key);
+
+/**
+ * 移除映射表中 key 對應到的物件，並將對應的位置標記為已棄用
  */
 void HashTable_Delete(HashTable *table, const char *key);
+
+/**
+ * 在映射表中查找 key 是否存在
+ */
+bool HashTable_HasKey(HashTable *table, const char *key);
 
 /**
  * 將映射表輸出成 JSON 字串
