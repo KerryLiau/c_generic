@@ -2,75 +2,77 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "hash_table.h"
+#include "generic_table.h"
 #include "string_builder.h"
 #include "common_util.h"
 
-void HashTable_Simple_Test(void)
+void GenericTable_Simple_Test(void)
 {
-    s_out("\n\nBegin basic test HashTable");
-    HashTable* table = New_HashTable();
-    s_out_f("the hash table address: '%p'", table);
+    s_out("\n\nBegin basic test GenericTable");
+    GenericTable* table = New_GenericTable();
+    s_out_f("the generic table address: '%p'", table);
     
-    s_out("\nlet's try add key value in map");
+    s_out("\nlet's try add key value in table");
     const char *key = "Hello";
     const char *value = "World";
-    HashTable_Add(table, key, value);
+    GenericTable_Add(table, key, value);
 
-    char *v = HashTable_Find_Str(table, key);
+    char *v = GenericTable_Find_Str(table, key);
+    if (strcmp(value, v) == 0)
+    {
+        s_out("the value from generic table is the same as input");
+    }
     s_out_f("the key is '%s', and the value is '%s'", key, v);
-    int count = HashTable_Size(table);
-    s_out_f("now the map size is: %d", count);
+    int count = GenericTable_Size(table);
+    s_out_f("now the table size is: %d", count);
 
-    char *table_str = HashTable_ToJsonStr(table);
-    s_out_f("the hash map now looks like: %s", table_str);
+    char *table_str = GenericTable_ToJsonStr(table);
+    s_out_f("the generic table now looks like: %s", table_str);
 
     s_out_f("\nlet's try update value stored in key %s", key);
     const char *new_value = "I'm Kerry";
-    HashTable_Add(table, key, new_value);
-    v = HashTable_Find_Str(table, key);
-    if (strcmp(v, new_value) == count)
+    GenericTable_Add(table, key, new_value);
+    v = GenericTable_Find_Str(table, key);
+    if (strcmp(v, new_value) == 0)
     {
         s_out_f("now the value stored in '%s' has change to '%s'", key, new_value);
     }
-    if (HashTable_Size(table) == 1)
+    if (GenericTable_Size(table) == 1)
     {
-        s_out("and the map count is still the same");
+        s_out("and the table count is still the same");
     }
 
-    if (strcmp(value, v) == 0)
-    {
-        s_out("the value from hash table is the same as input");
-    }
-
-    table_str = HashTable_ToJsonStr(table);
-    s_out_f("the hash map now looks like: %s", table_str);
+    table_str = GenericTable_ToJsonStr(table);
+    s_out_f("the generic table now looks like: %s", table_str);
     free(table_str);
 
     s_out_f("\nlet's try remove key %s", key);
-    HashTable_Delete(table, key);
-    s_out_f("the map size is: %d", HashTable_Size(table));
-    v = HashTable_Find_Str(table, key);
+    GenericTable_Delete(table, key);
+    v = GenericTable_Find_Str(table, key);
     if (v == NULL)
     {
         s_out_f("the key %s is now removed", key);
     }
+    if (GenericTable_IsEmpty(table))
+    {
+        s_out("the table is now empty");
+    }
 
-    s_out("\nlet's test function 'HashTable_HasKey'");
+    s_out("\nlet's test function 'GenericTable_HasKey'");
     s_out("first check key 'foo' that currently not exist in table");
-    if (!HashTable_HasKey(table, "foo"))
+    if (!GenericTable_HasKey(table, "foo"))
     {
         s_out("OK, the result is: key 'foo' not in table yet");
     }
     s_out("next put 'foo' into table, link it with value 'bar', and check again");
-    HashTable_Add(table, "foo", "bar");
-    if (HashTable_HasKey(table, "foo"))
+    GenericTable_Add(table, "foo", "bar");
+    if (GenericTable_HasKey(table, "foo"))
     {
-        s_out_f("the result is: key 'foo' is in table, the value is %s", HashTable_Find_Str(table, "foo"));
+        s_out_f("the result is: key 'foo' is in table, the value is %s", GenericTable_Find_Str(table, "foo"));
     }
     
     s_out_f("\nlet's try destruct table %p", table);
-    Delete_HashTable(&table);
+    Delete_GenericTable(&table);
     if (table == NULL)
     {
         s_out_f("the table was delete successfully, now the address is '%p'", table);
@@ -81,7 +83,7 @@ void HashTable_Simple_Test(void)
     }
 }
 
-void HashTable_Resize_Test()
+void GenericTable_Resize_Test()
 {
     s_out("\n\nNow, let's try put and delete more intensively\n");
     StringBuilder *key_builder = New_StringBuilder();
@@ -92,38 +94,38 @@ void HashTable_Resize_Test()
     );
     s_out("to increase calculate complexity, we add prefix and suffix");
     s_out("'Prefix_' as static prefix, and '_Suffix' as static key suffix\n");
-    s_out("if you're going to put very large amount into hash table, for better performance, you may set map init bucket size");
-    HashTable *table = New_HashTable_WithBucketSize(count * 2);
+    s_out("if you're going to put very large amount into generic table, for better performance, you may set table init bucket size");
+    GenericTable *table = New_GenericTable_WithBucketSize(count * 2);
     
     for (int i = 0; i < count; i++)
     {
         StringBuilder_Append(key_builder, "Prefix_");
         StringBuilder_Append(key_builder, i + 1999999999);
         StringBuilder_Append(key_builder, "_Suffix");
-        HashTable_Add(table, StringBuilder_Value(key_builder), (int) i);
+        GenericTable_Add(table, StringBuilder_Value(key_builder), (int) i);
         StringBuilder_Clear(key_builder);
     }
 
-    s_out_f("finished, now the table size is %d, but the table is too large to print, let's just skip that", HashTable_Size(table));
+    s_out_f("finished, now the table size is %d, but the table is too large to print, let's just skip that", GenericTable_Size(table));
     s_out("Second, let's delete all element in table\n");
     for (int i = 0; i < count; i++)
     {
         StringBuilder_Append(key_builder, "Prefix_");
         StringBuilder_Append(key_builder, i + 1999999999);
         StringBuilder_Append(key_builder, "_Suffix");
-        HashTable_Delete(table, StringBuilder_Value(key_builder));
+        GenericTable_Delete(table, StringBuilder_Value(key_builder));
         StringBuilder_Clear(key_builder);
     }
 
     char *table_str;
-    if (HashTable_IsEmpty(table))
+    if (GenericTable_IsEmpty(table))
     {
-        table_str = HashTable_ToJsonStr(table);
+        table_str = GenericTable_ToJsonStr(table);
         s_out_f("now the table is empty, and looks like this: %s", table_str);
         free(table_str);
     }
 
-    Delete_HashTable(&table);
+    Delete_GenericTable(&table);
     Delete_StringBuilder(&key_builder);
 }
 
@@ -132,8 +134,8 @@ void Time_Test(void)
     time_t begin, end;
 
     begin = clock();
-    HashTable_Simple_Test();
-    HashTable_Resize_Test();
+    GenericTable_Simple_Test();
+    GenericTable_Resize_Test();
     end = clock();
 
     double period = end - begin;
@@ -142,17 +144,17 @@ void Time_Test(void)
 
 void Generic_Test(void)
 {
-    s_out("\n\nBegin HashTable generic value test");
+    s_out("\n\nBegin GenericTable generic value test");
 
-    HashTable *table = New_HashTable();
-    HashTable_Add(table, "intVal", 26);
-    HashTable_Add(table, "strVal", "foo");
-    HashTable_Add(table, "const char *str", "*str");
+    GenericTable *table = New_GenericTable();
+    GenericTable_Add(table, "intVal", 26);
+    GenericTable_Add(table, "strVal", "foo");
+    GenericTable_Add(table, "const char *str", "*str");
 
-    s_out_f("strVal: %s", HashTable_Find_Str(table, "strVal"));
-    s_out_f("intVal: %d", *HashTable_Find_Int(table, "intVal"));
+    s_out_f("strVal: %s", GenericTable_Find_Str(table, "strVal"));
+    s_out_f("intVal: %d", *GenericTable_Find_Int(table, "intVal"));
 
-    int *ss = HashTable_Find_Int(table, "ss");
+    int *ss = GenericTable_Find_Int(table, "ss");
     if (!ss) 
     {
         s_out("ss is NULL");
@@ -162,33 +164,33 @@ void Generic_Test(void)
         s_out_f("intVal: %d", *ss);
     }
 
-    char *json_str = HashTable_ToIndentJsonStr(table);
+    char *json_str = GenericTable_ToIndentJsonStr(table);
     s_out_f("%s", json_str);
     free(json_str);
-    Delete_HashTable(&table);
+    Delete_GenericTable(&table);
 }
 
 void Dynamic_Type(void)
 {
-    s_out("\n\nBegin HashTable dynamic value type test\n");
+    s_out("\n\nBegin GenericTable dynamic value type test\n");
 
-    HashTable *table = New_HashTable();
-    s_out("map key 'val' with 26");
-    HashTable_Add(table, "val", 26);
-    s_out_f("the key 'val' correspond value is: %d\n", *HashTable_Find_Int(table, "val"));
+    GenericTable *table = New_GenericTable();
+    s_out("table key 'val' with 26");
+    GenericTable_Add(table, "val", 26);
+    s_out_f("the key 'val' correspond value is: %d\n", *GenericTable_Find_Int(table, "val"));
 
-    s_out("map key 'val' with 'AAA'");
-    HashTable_Add(table, "val", "AAA");
-    s_out_f("the key 'val' correspond value is: %s\n", HashTable_Find_Str(table, "val"));
+    s_out("table key 'val' with 'AAA'");
+    GenericTable_Add(table, "val", "AAA");
+    s_out_f("the key 'val' correspond value is: %s\n", GenericTable_Find_Str(table, "val"));
 
-    s_out("map key 'val' with 5.56");
-    HashTable_Add(table, "val", 5.56);
-    s_out_f("the key 'val' correspond value is: %f\n", *HashTable_Find_Double(table, "val"));
+    s_out("table key 'val' with 5.56");
+    GenericTable_Add(table, "val", 5.56);
+    s_out_f("the key 'val' correspond value is: %f\n", *GenericTable_Find_Double(table, "val"));
 
-    char *json_str = HashTable_ToIndentJsonStr(table);
+    char *json_str = GenericTable_ToIndentJsonStr(table);
     s_out_f("%s", json_str);
     free(json_str);
-    Delete_HashTable(&table);
+    Delete_GenericTable(&table);
 }
 
 void NestStructure_Test()
@@ -196,27 +198,26 @@ void NestStructure_Test()
     s_out("\n\nBegin test nest structure\n");
 
     s_out("let's create table 1,2,3");
-    HashTable *table1 = New_HashTable();
-    HashTable *table2 = New_HashTable();
-    HashTable *table3 = New_HashTable();
+    GenericTable *table1 = New_GenericTable();
+    GenericTable *table2 = New_GenericTable();
+    GenericTable *table3 = New_GenericTable();
 
     s_out("and put table 2 into table 1, then table 3 into table 2");
-    HashTable_Add(table1, "map", table2);
-    HashTable_Add(table2, "map2", table3);
+    GenericTable_Add(table1, "Table 2", table2);
+    GenericTable_Add(table2, "Table 3", table3);
 
     s_out("put some other element into table 1,2,3");
-    HashTable_Add(table1, "My name is", "Table 1");
-    HashTable_Add(table2, "My name is", "Table 2");
-    HashTable_Add(table3, "My name is", "Table 3");
+    GenericTable_Add(table1, "My name is", "Table 1");
+    GenericTable_Add(table2, "My name is", "Table 2");
+    GenericTable_Add(table3, "My name is", "Table 3");
 
     s_out("OK, let's see how table 1 looks like now:\n");
-    char *str = HashTable_ToIndentJsonStr(table1);
+    char *str = GenericTable_ToIndentJsonStr(table1);
     s_out(str);
     free(str);
 
-    s_out("\ntime for delete table, because 'Delete_HashTable' function will delete map recursive");
-    s_out("so we only need delete table 1");
-    Delete_HashTable(&table1);
+    s_out("\ntime for delete table, because 'Delete_GenericTable' function will delete table recursive, so we only need delete table 1");
+    Delete_GenericTable(&table1);
 }
 
 int main(void)
