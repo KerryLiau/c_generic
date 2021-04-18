@@ -139,16 +139,23 @@ int GenericTable_Size(GenericTable *table);
  */
 bool GenericTable_IsEmpty(GenericTable *table);
 
-bool GenericTableItem_IsValid(GenericTableItem *item);
-
-GenericTableItem** GenericTable_GetItems(GenericTable *table);
-
-int GenericTable_GetBucketSize(GenericTable *table);
-
 struct GenericType;
 
 char* GenericTableItem_GetKey(GenericTableItem *item);
 
 struct GenericType* GenericTableItem_GetValue(GenericTableItem *item);
+
+/**
+ * GenericTable 專用的迭代器，使用完後必須呼叫 Delete_GenericTableIterator 解構
+ */
+typedef struct GenericTableIterator GenericTableIterator;
+
+GenericTableIterator* GenericTable_GetIterator(GenericTable *table);
+
+bool GenericTableIterator_HasNext(GenericTableIterator *iterator);
+
+GenericTableItem* GenericTableIterator_Next(GenericTableIterator *iterator);
+
+void Delete_GenericTableIterator(GenericTableIterator **p_iterator);
 
 #endif

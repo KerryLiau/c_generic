@@ -44,11 +44,11 @@ static void _SerializeContent_Callback(
         case GEN_TYPE_TABLE:
         {
             GenericTable *gen_table = GenericType_GetTable(gen);
-            GenericTableItem **gen_items = GenericTable_GetItems(gen_table);
-            int gen_items_count = GenericTable_GetBucketSize(gen_table);
-            char *map_str = _Callback(GEN_TYPE_TABLE, gen_items, gen_items_count, level + 1, need_indent);
+            GenericTableIterator *iterator = GenericTable_GetIterator(gen_table);
+            char *map_str = _Callback(GEN_TYPE_TABLE, iterator, 0, level + 1, need_indent);
             StringBuilder_Append(builder, map_str);
             free(map_str);
+            Delete_GenericTableIterator(&iterator);
             break;
         }
         case GEN_TYPE_LIST:
@@ -76,20 +76,25 @@ static char* _Object_ToJsonString(GenericTypeEnum type, void *items, int items_c
         StringBuilder_Append(builder, OBJECT_BEGIN);
     else 
         StringBuilder_Append(builder, ARRAY_BEGIN);
-    
     if (need_indent) depth++;
 
-    GenericTableItem *table_item;
-    GenericType *array_item;
-    for (int i = 0; i < items_count; i++)
+    GenericTableIterator *iterator = NULL;
+    if (is_table) 
+        iterator = (GenericTableIterator*) items;
+    GenericTableItem *table_item = NULL;
+    GenericType *array_item = NULL;
+    int index = 0;
+    bool keep_going;
+    if (is_table)
+        keep_going = GenericTableIterator_HasNext((GenericTableIterator*) items);
+    else
+        keep_going = index < items_count;
+    while (keep_going)
     {
         if (is_table)
-            table_item = (GenericTableItem*) ((GenericTableItem**) items)[i];
+            table_item = (GenericTableItem*) GenericTableIterator_Next(iterator);
         else 
-            array_item = (GenericType*) GenericList_At(((GenericList*) items), i);
-        
-        if (is_table && !GenericTableItem_IsValid(table_item)) continue;
-
+            array_item = (GenericType*) GenericList_At(((GenericList*) items), index);
         if (counter > 0) 
             StringBuilder_Append(builder, DELIMITER);
         if (need_indent)
@@ -122,6 +127,11 @@ static char* _Object_ToJsonString(GenericTypeEnum type, void *items, int items_c
         if (is_str) 
             StringBuilder_Append(builder, QUOTE);
         counter++;
+        index++;
+        if (is_table)
+            keep_going = GenericTableIterator_HasNext(iterator);
+        else
+            keep_going = index < items_count;
     }
 
     if (need_indent)
@@ -135,7 +145,6 @@ static char* _Object_ToJsonString(GenericTypeEnum type, void *items, int items_c
         StringBuilder_Append(builder, OBJECT_END);
     else 
         StringBuilder_Append(builder, ARRAY_END);
-
     char *str = StringBuilder_Value(builder);
     Delete_StringBuilder(&builder);
     return str;
@@ -143,28 +152,30 @@ static char* _Object_ToJsonString(GenericTypeEnum type, void *items, int items_c
 
 char* JsonSerializer_TableToStr(struct GenericTable *table)
 {
-    GenericTableItem **items = GenericTable_GetItems(table);
-    int items_count = GenericTable_GetBucketSize(table);
-    return _Object_ToJsonString(GEN_TYPE_TABLE, items, items_count, 0, NO_NEED_INDENT);
+    GenericTableIterator *iterator = GenericTable_GetIterator(table);
+    char *json_str = _Object_ToJsonString(GEN_TYPE_TABLE, iterator, 0, 0, NO_NEED_INDENT);
+    Delete_GenericTableIterator(&iterator);
+    return json_str;
 }
 
 char* JsonSerializer_TableToIndentStr(struct GenericTable *table)
 {
-    GenericTableItem **items = GenericTable_GetItems(table);
-    int items_count = GenericTable_GetBucketSize(table);
-    return _Object_ToJsonString(GEN_TYPE_TABLE, items, items_count, 0, NEED_INDENT);
+    GenericTableIterator *iterator = GenericTable_GetIterator(table);
+    char *json_str = _Object_ToJsonString(GEN_TYPE_TABLE, iterator, 0, 0, NEED_INDENT);
+    Delete_GenericTableIterator(&iterator);
+    return json_str;
 }
 
 char* JsonSerializer_ListToStr(struct GenericList *list)
 {
     int list_size = GenericList_Size(list);
-    return _Object_ToJsonString(GEN_TYPE_TABLE, list, list_size, 0, NO_NEED_INDENT);
+    return _Object_ToJsonString(GEN_TYPE_LIST, list, list_size, 0, NO_NEED_INDENT);
 }
 
 char* JsonSerializer_ListToIndentStr(struct GenericList *list)
 {
     int list_size = GenericList_Size(list);
-    return _Object_ToJsonString(GEN_TYPE_TABLE, list, list_size, 0, NEED_INDENT);
+    return _Object_ToJsonString(GEN_TYPE_LIST, list, list_size, 0, NEED_INDENT);
 }
 
 

@@ -44,13 +44,23 @@ struct GenericTable_Private
     GenericTableItem **items;
 };
 
+/**
+ * 迭代器實作
+ */
+struct GenericTableIterator 
+{
+    int last;
+    int next;
+    GenericTableItem **items;
+};
+
 // 作為雜湊運算用的常數
-static const int HASH_ARG = 0X11;
-static const int DEFAULT_SIZE = 0X1f;
-static const int DEFAULT_LOAD_FACTOR = 0X50;
+static const int _HASH_ARG = 0X11;
+static const int _DEFAULT_SIZE = 0X1f;
+static const int _DEFAULT_LOAD_FACTOR = 0X50;
 
 // 作為判定已刪除的物件
-static GenericTableItem HT_DELETED_ITEM = {NULL, NULL};
+static GenericTableItem _DELETED_ITEM = {NULL, NULL};
 
 static GenericTableItem* _New_GenericTableItem(const char *key, GenericType *val)
 {
@@ -84,7 +94,7 @@ static int _Calculate_StringHash(const char *str, const int hash_arg)
 
 static int _Get_HashValue(const char *str, const int max_val, const int addition)
 {
-    int result = _Calculate_StringHash(str, HASH_ARG);
+    int result = _Calculate_StringHash(str, _HASH_ARG);
     if (result < 0) result = ~result;
 
     return (result + addition) % max_val;
@@ -92,7 +102,7 @@ static int _Get_HashValue(const char *str, const int max_val, const int addition
 
 static inline int _IsAbandoned(GenericTableItem *item)
 {
-    return item == &HT_DELETED_ITEM;
+    return item == &_DELETED_ITEM;
 }
 
 static inline int _IsValid(GenericTableItem *item)
@@ -154,9 +164,9 @@ static inline void _EnsureBucketSize(GenericTable *table)
     GenericTable_Private *curr_priv = table->priv;
     int current_size = curr_priv->item_count;
     int new_size = NumberUtil_NextPrime(current_size * 2);
-    if (DEFAULT_SIZE >= new_size) 
+    if (_DEFAULT_SIZE >= new_size) 
     {
-        new_size = DEFAULT_SIZE;
+        new_size = _DEFAULT_SIZE;
     }
 
     GenericTable *temp_table = _New_GenericTable(new_size, curr_priv->resize_threshold);
@@ -205,12 +215,12 @@ static GenericTableItem* _Find(GenericTable *table, const char *key)
 // ================================================================================
 GenericTable* New_GenericTable(void) 
 {
-    return _New_GenericTable(DEFAULT_SIZE, DEFAULT_LOAD_FACTOR);
+    return _New_GenericTable(_DEFAULT_SIZE, _DEFAULT_LOAD_FACTOR);
 }
 
 GenericTable* New_GenericTable_WithBucketSize(int size) 
 {
-    return _New_GenericTable(size, DEFAULT_LOAD_FACTOR);
+    return _New_GenericTable(size, _DEFAULT_LOAD_FACTOR);
 }
 
 GenericTable* New_GenericTable_WithBucketSizeAndLoadFactor(int size, int load_factor)
@@ -375,7 +385,7 @@ void GenericTable_Delete(GenericTable *table, const char *key)
         if (_IsAbandoned(item) || strcmp(item->key, key) != 0) continue;
 
         _Delete_GenericTableItem(item);
-        priv->items[index] = &HT_DELETED_ITEM;
+        priv->items[index] = &_DELETED_ITEM;
         priv->item_count--;
         priv->modified_count++;
         break;
@@ -400,21 +410,6 @@ inline bool GenericTable_IsEmpty(GenericTable *table)
     return GenericTable_Size(table) == 0;
 }
 
-bool GenericTableItem_IsValid(GenericTableItem *item)
-{
-    return _IsValid(item);
-}
-
-GenericTableItem** GenericTable_GetItems(GenericTable *table)
-{
-    return table->priv->items;
-}
-
-int GenericTable_GetBucketSize(GenericTable *table)
-{
-    return table->priv->bucket_size;
-}
-
 char* GenericTableItem_GetKey(GenericTableItem *item)
 {
     return item->key;
@@ -424,6 +419,52 @@ struct GenericType* GenericTableItem_GetValue(GenericTableItem *item)
 {
     return item->value;
 }
+
+GenericTableIterator* GenericTable_GetIterator(GenericTable *table)
+{
+    int iterator_size = table->priv->item_count;
+    GenericTableIterator *iterator = (GenericTableIterator*) malloc(sizeof(GenericTableIterator));
+    GenericTableItem **items = (GenericTableItem**) calloc(iterator_size, sizeof(GenericTableItem*));
+    iterator->next = 0;
+    iterator->last = 0;
+    iterator->items = items;
+    for (int i = 0; i < table->priv->bucket_size; i++) 
+    {
+        GenericTableItem *item = table->priv->items[i];
+        if (!_IsValid(item)) continue;
+        iterator->items[iterator->last] = item;
+        iterator->last++;
+    }
+    return iterator;
+}
+
+bool GenericTableIterator_HasNext(GenericTableIterator *iterator)
+{
+    return iterator->next < iterator->last;
+}
+
+GenericTableItem* GenericTableIterator_Next(GenericTableIterator *iterator)
+{
+    GenericTableItem *item = iterator->items[iterator->next];
+    iterator->next++;
+    return item;
+}
+
+void Delete_GenericTableIterator(GenericTableIterator **p_iterator)
+{
+    GenericTableIterator *iterator = *p_iterator;
+    // iterator->items 中的 GenericTableItem 還需要使用，
+    // 故釋放 iterator->items 本身，以及歸零裡面的指標即可
+    for (int i = 0; i < iterator->last; i++)
+    {
+        GenericTableItem **p = &(iterator->items[i]);
+        *p = NULL;
+    }
+    free(iterator->items);
+    free(iterator);
+    *p_iterator = NULL;
+}
+
 
 
 

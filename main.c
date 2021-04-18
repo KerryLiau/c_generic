@@ -9,9 +9,27 @@
 #include "include/string_builder.h"
 #include "include/common_util.h"
 
+// static const int size = 100;
+#define size 100
+
 int main(int argc, char **argv)
 {
-    s_out("Hello World!");
+    char *string = (char*) calloc(100, sizeof(char));
+    while (true)
+    {
+        s_out("please input:");
+        fgets(string, size, stdin);
+        if (strcmp(string, "exit") == 0) //strcmp(string, "掰掰")
+        {
+            s_out("掰掰～");
+            break;
+        }
+        else 
+        {
+            s_out(strcmp(string, "掰掰"));
+        }
+        s_out(string);
+    }
 }
 
 

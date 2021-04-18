@@ -216,8 +216,8 @@ void NestHybridStructure_Test()
     GenericTable_Add(table3, "My name is", "Table 3");
 
     GenericList *list1 = New_GenericList();
-    GenericList_Add(list1, 5);
-    GenericList_Add(list1, "6");
+    GenericList_Add(list1, 9);
+    GenericList_Add(list1, "My name is List 1");
     GenericList_Add(list1, 7.62);
 
     GenericTable_Add(table1, "List 1", list1);
