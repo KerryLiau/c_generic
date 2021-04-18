@@ -3,11 +3,11 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "common_util.h"
-#include "generic_table.h"
-#include "generic_type.h"
-#include "string_builder.h"
-#include "number_util.h"
+#include "../include/common_util.h"
+#include "../include/generic_table.h"
+#include "../include/generic_type.h"
+#include "../include/string_builder.h"
+#include "../include/number_util.h"
 
 // ================================================================================
 // Private Properties

@@ -1,9 +1,9 @@
 #include "stdlib.h"
 #include "string.h"
 #include "stdio.h"
-#include "string_builder.h"
-#include "common_util.h"
-#include "number_util.h"
+#include "../include/string_builder.h"
+#include "../include/common_util.h"
+#include "../include/number_util.h"
 
 // ================================================================================
 // Private Properties

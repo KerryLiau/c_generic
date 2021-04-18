@@ -1,10 +1,10 @@
-#include "json_serializer.h"
-#include "common_util.h"
-#include "generic_list.h"
-#include "generic_type_enum.h"
-#include "string_builder.h"
-#include "generic_table.h"
-#include "generic_type.h"
+#include "../include/json_serializer.h"
+#include "../include/common_util.h"
+#include "../include/generic_list.h"
+#include "../include/generic_type_enum.h"
+#include "../include/string_builder.h"
+#include "../include/generic_table.h"
+#include "../include/generic_type.h"
 
 // 序列化用常數
 static const char *QUOTE = "\"";

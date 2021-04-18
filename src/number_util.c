@@ -1,6 +1,7 @@
 #include "math.h"
-#include "number_util.h"
-#include "common_util.h"
+
+#include "../include/number_util.h"
+#include "../include/common_util.h"
 
 // ================================================================================
 // Private Properties

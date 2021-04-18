@@ -1,10 +1,11 @@
-#include "generic_list.h"
-#include "string_builder.h"
-#include "common_util.h"
-#include "generic_type.h"
-#include "number_util.h"
 #include <stdlib.h>
 #include <string.h>
+
+#include "../include/generic_list.h"
+#include "../include/string_builder.h"
+#include "../include/common_util.h"
+#include "../include/generic_type.h"
+#include "../include/number_util.h"
 
 // ================================================================================
 // Private Properties

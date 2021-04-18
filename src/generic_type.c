@@ -1,9 +1,10 @@
-#include "generic_type.h"
-#include "generic_list.h"
-#include "common_util.h"
-#include "generic_type_enum.h"
 #include <string.h>
 #include <stdlib.h>
+
+#include "../include/generic_type.h"
+#include "../include/generic_list.h"
+#include "../include/common_util.h"
+#include "../include/generic_type_enum.h"
 
 // ================================================================================
 // Private Properties

@@ -1,7 +1,7 @@
-#include "common_util.h"
 #include "stdio.h"
 
-#include "common_util.h"
+#include "../include/common_util.h"
+#include "../include/common_util.h"
 
 void println_str(char *var)
 {
