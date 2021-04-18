@@ -12,11 +12,11 @@
 // ================================================================================
 // Private Properties
 // ================================================================================
-typedef struct GenericTableItem
+struct GenericTableItem
 {
     char *key;
     GenericType *value;
-} GenericTableItem;
+};
 
 struct GenericTable_Private
 {
@@ -52,18 +52,6 @@ static const int DEFAULT_LOAD_FACTOR = 0X50;
 // 作為判定已刪除的物件
 static GenericTableItem HT_DELETED_ITEM = {NULL, NULL};
 
-// 序列化用常數
-static const char *QUOTE = "\"";
-static const char *COLON = ":";
-static const char *DELIMITER = ",";
-static const char *BEGIN = "{";
-static const char *END = "}";
-static const char *INDENT = "  ";
-
-// 判定序列化時，是否需要縮排
-static const int NEED_INDENT = true;
-static const int NO_NEED_INDENT = false;
-
 static GenericTableItem* _New_GenericTableItem(const char *key, GenericType *val)
 {
     GenericTableItem* item = (GenericTableItem*) malloc(sizeof(GenericTableItem));
@@ -71,42 +59,6 @@ static GenericTableItem* _New_GenericTableItem(const char *key, GenericType *val
     item->value = val;
 
     return item;
-}
-
-static GenericTableItem* _New_Str_GenericTableItem(const char *key, const char *val) 
-{
-    GenericType *gen_obj = New_GenericType(val);
-    return _New_GenericTableItem(key, gen_obj);
-}
-
-static GenericTableItem* _New_Int_GenericTableItem(const char *key, int val) 
-{
-    GenericType *gen_obj = New_GenericType(val);
-    return _New_GenericTableItem(key, gen_obj);
-}
-
-static GenericTableItem* _New_Long_GenericTableItem(const char *key, long val) 
-{
-    GenericType *gen_obj = New_GenericType(val);
-    return _New_GenericTableItem(key, gen_obj);
-}
-
-static GenericTableItem* _New_Double_GenericTableItem(const char *key, double val) 
-{
-    GenericType *gen_obj = New_GenericType(val);
-    return _New_GenericTableItem(key, gen_obj);
-}
-
-static GenericTableItem* _New_Float_GenericTableItem(const char *key, float val) 
-{
-    GenericType *gen_obj = New_GenericType(val);
-    return _New_GenericTableItem(key, gen_obj);
-}
-
-static GenericTableItem* _New_Table_GenericTableItem(const char *key, GenericTable *val)
-{
-    GenericType *gen_obj = New_GenericType(val);
-    return _New_GenericTableItem(key, gen_obj);
 }
 
 static void _Delete_GenericTableItem(GenericTableItem* item) 
@@ -189,8 +141,16 @@ static void _AddItem(GenericTable *table, GenericTableItem *new_item)
     priv->modified_count++;
 }
 
-static void _Resize(GenericTable *table)
+static int _NeedResize(GenericTable *table)
 {
+    GenericTable_Private *priv = table->priv;
+    return priv->modified_count * 100 / priv->bucket_size > priv->resize_threshold;
+}
+
+static inline void _EnsureBucketSize(GenericTable *table)
+{
+    if (!_NeedResize(table)) return;
+    
     GenericTable_Private *curr_priv = table->priv;
     int current_size = curr_priv->item_count;
     int new_size = NumberUtil_NextPrime(current_size * 2);
@@ -200,10 +160,7 @@ static void _Resize(GenericTable *table)
     }
 
     GenericTable *temp_table = _New_GenericTable(new_size, curr_priv->resize_threshold);
-    if (!temp_table) 
-    {
-        s_out("malloc new GenericTable failed...");
-    }
+    if (!temp_table) s_out_err("malloc new GenericTable failed");
 
     for (size_t i = 0; i < curr_priv->bucket_size; i++)
     {
@@ -217,24 +174,8 @@ static void _Resize(GenericTable *table)
     table->priv = temp_priv;
     free(curr_priv->items);
 
-    if (curr_priv) 
-    {
-        free(curr_priv);
-    }
-}
-
-static int _NeedResize(GenericTable *table)
-{
-    GenericTable_Private *priv = table->priv;
-    return priv->modified_count * 100 / priv->bucket_size > priv->resize_threshold;
-}
-
-static inline void _EnsureBucketSize(GenericTable *table)
-{
-    if (_NeedResize(table)) 
-    {
-        _Resize(table);
-    }
+    if (curr_priv) return;
+    free(curr_priv);
 }
 
 static GenericTableItem* _Find(GenericTable *table, const char *key)
@@ -257,101 +198,6 @@ static GenericTableItem* _Find(GenericTable *table, const char *key)
     }
 
     return NULL;
-}
-
-static char* _ToJsonString(GenericTable *table, int level, bool need_indent)
-{
-    int counter, depth;
-    counter = 0;
-    depth = level;
-    StringBuilder *builder = New_StringBuilder();
-    StringBuilder_Append(builder, BEGIN);
-
-    if (need_indent)
-    {
-        depth++;
-    }
-
-    GenericTable_Private *priv = table->priv;
-    for (size_t i = 0; i < priv->bucket_size; i++)
-    {
-        GenericTableItem *item = priv->items[i];
-        if (!_IsValid(item)) continue;
-        if (counter > 0) 
-        {
-            StringBuilder_Append(builder, DELIMITER);
-        }
-        if (need_indent)
-        {
-            StringBuilder_Append(builder, "\n");
-            for (size_t d = 0; d < depth; d++)
-            {
-                StringBuilder_Append(builder, "  ");
-            }
-        }
-        StringBuilder_Append(builder, QUOTE);
-        StringBuilder_Append(builder, item->key);
-        StringBuilder_Append(builder, QUOTE);
-        StringBuilder_Append(builder, COLON);
-
-        GenericType *gen = item->value;
-        GenericTypeEnum type = GenericType_GetType(gen);
-        bool is_str = type == GEN_TYPE_STR;
-        if (is_str) 
-        {
-            StringBuilder_Append(builder, QUOTE);
-        }
-        
-        switch (type) 
-        {
-            case GEN_TYPE_STR:
-                StringBuilder_Append(builder, GenericType_GetStr(gen));
-                break;
-            case GEN_TYPE_INT:
-                StringBuilder_Append(builder, *GenericType_GetInt(gen));
-                break;
-            case GEN_TYPE_LONG:
-                StringBuilder_Append(builder, *GenericType_GetLong(gen));
-                break;
-            case GEN_TYPE_FLOAT:
-                StringBuilder_Append(builder, *GenericType_GetFloat(gen));
-                break;
-            case GEN_TYPE_DOUBLE:
-                StringBuilder_Append(builder, *GenericType_GetDouble(gen));
-                break;
-            case GEN_TYPE_TABLE:
-            {
-                // should extract as json serializer?
-                char *map_str = _ToJsonString(GenericType_GetTable(gen), level + 1, need_indent);
-                StringBuilder_Append(builder, map_str);
-                free(map_str);
-                break;
-            }
-            case GEN_TYPE_LIST:
-                // todo
-                break;
-        }
-        
-        if (is_str) 
-        {
-            StringBuilder_Append(builder, QUOTE);
-        }
-        counter++;
-    }
-
-    if (need_indent)
-    {
-        StringBuilder_Append(builder, "\n");
-        depth--;
-        for (size_t d = 0; d < depth; d++)
-        {
-            StringBuilder_Append(builder, "  ");
-        }
-    }
-    StringBuilder_Append(builder, END);
-    char *str = StringBuilder_Value(builder);
-    Delete_StringBuilder(&builder);
-    return str;
 }
 
 // ================================================================================
@@ -393,42 +239,56 @@ void Delete_GenericTable(GenericTable **p_to_table)
 void GenericTable_Add_Str(GenericTable *table, const char *key, const char *value)
 {
     _EnsureBucketSize(table);
-    GenericTableItem *new_item = _New_Str_GenericTableItem(key, value);
+    GenericType *gen_obj = New_GenericType(value);
+    GenericTableItem *new_item = _New_GenericTableItem(key, gen_obj);
     _AddItem(table, new_item);
 }
 
 void GenericTable_Add_Int(GenericTable *table, const char *key, int value)
 {
     _EnsureBucketSize(table);
-    GenericTableItem *new_item = _New_Int_GenericTableItem(key, value);
+    GenericType *gen_obj = New_GenericType(value);
+    GenericTableItem *new_item = _New_GenericTableItem(key, gen_obj);
     _AddItem(table, new_item);
 }
 
 void GenericTable_Add_Long(GenericTable *table, const char *key, long value)
 {
     _EnsureBucketSize(table);
-    GenericTableItem *new_item = _New_Long_GenericTableItem(key, value);
+    GenericType *gen_obj = New_GenericType(value);
+    GenericTableItem *new_item = _New_GenericTableItem(key, gen_obj);
     _AddItem(table, new_item);
 }
 
 void GenericTable_Add_Double(GenericTable *table, const char *key, double value)
 {
     _EnsureBucketSize(table);
-    GenericTableItem *new_item = _New_Double_GenericTableItem(key, value);
+    GenericType *gen_obj = New_GenericType(value);
+    GenericTableItem *new_item = _New_GenericTableItem(key, gen_obj);
     _AddItem(table, new_item);
 }
 
 void GenericTable_Add_Float(GenericTable *table, const char *key, float value)
 {
     _EnsureBucketSize(table);
-    GenericTableItem *new_item = _New_Float_GenericTableItem(key, value);
+    GenericType *gen_obj = New_GenericType(value);
+    GenericTableItem *new_item = _New_GenericTableItem(key, gen_obj);
     _AddItem(table, new_item);
 }
 
 void GenericTable_Add_Table(GenericTable *table, const char *key, GenericTable *value)
 {
     _EnsureBucketSize(table);
-    GenericTableItem *new_item = _New_Table_GenericTableItem(key, value);
+    GenericType *gen_obj = New_GenericType(value);
+    GenericTableItem *new_item = _New_GenericTableItem(key, gen_obj);
+    _AddItem(table, new_item);
+}
+
+void GenericTable_Add_List(GenericTable *table, const char *key, struct GenericList *value)
+{
+    _EnsureBucketSize(table);
+    GenericType *gen_obj = New_GenericType(value);
+    GenericTableItem *new_item = _New_GenericTableItem(key, gen_obj);
     _AddItem(table, new_item);
 }
 
@@ -540,13 +400,31 @@ inline bool GenericTable_IsEmpty(GenericTable *table)
     return GenericTable_Size(table) == 0;
 }
 
-char* GenericTable_ToJsonStr(GenericTable *table)
+bool GenericTableItem_IsValid(GenericTableItem *item)
 {
-    return _ToJsonString(table, 0, NO_NEED_INDENT);
+    return _IsValid(item);
 }
 
-char* GenericTable_ToIndentJsonStr(GenericTable *table)
+GenericTableItem** GenericTable_GetItems(GenericTable *table)
 {
-    return _ToJsonString(table, 0, NEED_INDENT);
+    return table->priv->items;
 }
+
+int GenericTable_GetBucketSize(GenericTable *table)
+{
+    return table->priv->bucket_size;
+}
+
+char* GenericTableItem_GetKey(GenericTableItem *item)
+{
+    return item->key;
+}
+
+struct GenericType* GenericTableItem_GetValue(GenericTableItem *item)
+{
+    return item->value;
+}
+
+
+
 

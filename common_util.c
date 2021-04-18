@@ -27,3 +27,18 @@ void println_float(float var)
 {
     printf("%f\n", var);
 }
+
+void printerrln_str(char *var)
+{
+    printf("!Warning: %s\n", var);
+}
+
+bool CommonUtil_IsNull(void *obj)
+{
+    if (!obj)
+    {
+        s_out_err("null object deteced!");
+        return true;
+    }
+    return false;
+}

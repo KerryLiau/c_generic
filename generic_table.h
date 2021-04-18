@@ -3,6 +3,8 @@
 
 #include "common_util.h"
 
+struct GenericList;
+
 /**
  * 映射表的私有屬性，裡面的屬性：
  * 
@@ -22,6 +24,8 @@
  * 承裝映射物件的容器
  */
 typedef struct GenericTable_Private GenericTable_Private;
+
+typedef struct GenericTableItem GenericTableItem;
 
 typedef struct GenericTable
 {
@@ -60,7 +64,8 @@ void Delete_GenericTable(GenericTable **table);
     long: GenericTable_Add_Long,\
     double: GenericTable_Add_Double,\
     float: GenericTable_Add_Float,\
-    GenericTable*: GenericTable_Add_Table\
+    GenericTable*: GenericTable_Add_Table,\
+    struct GenericList*: GenericTable_Add_List\
 )(table, key, value)
 
 void GenericTable_Add_Str(GenericTable *table, const char *key, const char *value);
@@ -74,6 +79,8 @@ void GenericTable_Add_Double(GenericTable *table, const char *key, double value)
 void GenericTable_Add_Float(GenericTable *table, const char *key, float value);
 
 void GenericTable_Add_Table(GenericTable *table, const char *key, GenericTable *value);
+
+void GenericTable_Add_List(GenericTable *table, const char *key, struct GenericList *value);
 
 /**
  * 在映射表中查找字串指標，
@@ -122,16 +129,6 @@ void GenericTable_Delete(GenericTable *table, const char *key);
 bool GenericTable_HasKey(GenericTable *table, const char *key);
 
 /**
- * 將映射表輸出成 JSON 字串
- */
-char* GenericTable_ToJsonStr(GenericTable *table);
-
-/**
- * 將映射表輸出成有縮排的 JSON 字串
- */
-char* GenericTable_ToIndentJsonStr(GenericTable *table);
-
-/**
  * 取得映射表當前物件數量
  */
 int GenericTable_Size(GenericTable *table);
@@ -141,5 +138,17 @@ int GenericTable_Size(GenericTable *table);
  * 0 = false, 1 = true
  */
 bool GenericTable_IsEmpty(GenericTable *table);
+
+bool GenericTableItem_IsValid(GenericTableItem *item);
+
+GenericTableItem** GenericTable_GetItems(GenericTable *table);
+
+int GenericTable_GetBucketSize(GenericTable *table);
+
+struct GenericType;
+
+char* GenericTableItem_GetKey(GenericTableItem *item);
+
+struct GenericType* GenericTableItem_GetValue(GenericTableItem *item);
 
 #endif

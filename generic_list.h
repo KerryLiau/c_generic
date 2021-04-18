@@ -1,15 +1,17 @@
 #ifndef GENERIC_LIST_H
 #define GENERIC_LIST_H
 
-#include "generic_type.h"
+#include "generic_table.h"
 
 typedef struct GenericList GenericList;
 
+struct GenericType;
+
 GenericList* New_GenericList();
 
-void Delete_GenericList(GenericList **list);
+void Delete_GenericList(GenericList **p_list);
 
-GenericType* GenericList_At(int index);
+struct GenericType* GenericList_At(GenericList *list, int index);
 
 int GenericList_Size(GenericList *list);
 
@@ -23,8 +25,8 @@ bool GenericList_IsEmpty(GenericList *list);
     float: GenericList_Add_Float,\
     double: GenericList_Add_Double,\
     GenericTable*: GenericList_Add_Table,\
-    GenericList*: GenericList_Add_List,\
-)
+    GenericList*: GenericList_Add_List\
+) (list, val)
 
 void GenericList_Add_Str(GenericList *list, char *val);
 
@@ -40,8 +42,11 @@ void GenericList_Add_Table(GenericList *list, GenericTable *val);
 
 void GenericList_Add_List(GenericList *list, GenericList *val);
 
-void GenericList_DeleteAt(GenericList *list, int index);
+/**
+ * return: the operate is success or not
+ */
+bool GenericList_DeleteAt(GenericList *list, int index);
 
-void GenericList_IndexAt(GenericList *list, GenericType *obj);
+void GenericList_IndexAt(GenericList *list, struct GenericType *obj);
 
 #endif

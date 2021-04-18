@@ -5,8 +5,6 @@
 // ================================================================================
 // Private Properties
 // ================================================================================
-static long INT_MAX = 0xFFFFFFFF;
-
 static long _Next_PowerOf2(int input, int pow_number)
 {
     int result = (long) pow(2, pow_number);
@@ -14,10 +12,10 @@ static long _Next_PowerOf2(int input, int pow_number)
     {
         return result;
     }
-    if (result == INT_MAX + 1)
+    if (result == NUMBER_UTIL_INT_MAX + 1)
     {
         // Integer 的最大正整數
-        return INT_MAX;
+        return NUMBER_UTIL_INT_MAX;
     }
     return _Next_PowerOf2(input, pow_number + 1);
 }

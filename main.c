@@ -2,7 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "json_serializer.h"
+#include "generic_list.h"
 #include "generic_table.h"
+#include "generic_type.h"
 #include "string_builder.h"
 #include "common_util.h"
 
@@ -26,7 +29,7 @@ void GenericTable_Simple_Test(void)
     int count = GenericTable_Size(table);
     s_out_f("now the table size is: %d", count);
 
-    char *table_str = GenericTable_ToJsonStr(table);
+    char *table_str = JsonSerializer_ToStr(table);
     s_out_f("the generic table now looks like: %s", table_str);
 
     s_out_f("\nlet's try update value stored in key %s", key);
@@ -42,7 +45,7 @@ void GenericTable_Simple_Test(void)
         s_out("and the table count is still the same");
     }
 
-    table_str = GenericTable_ToJsonStr(table);
+    table_str = JsonSerializer_ToStr(table);
     s_out_f("the generic table now looks like: %s", table_str);
     free(table_str);
 
@@ -120,7 +123,7 @@ void GenericTable_Resize_Test()
     char *table_str;
     if (GenericTable_IsEmpty(table))
     {
-        table_str = GenericTable_ToJsonStr(table);
+        table_str = JsonSerializer_ToStr(table);
         s_out_f("now the table is empty, and looks like this: %s", table_str);
         free(table_str);
     }
@@ -164,7 +167,7 @@ void Generic_Test(void)
         s_out_f("intVal: %d", *ss);
     }
 
-    char *json_str = GenericTable_ToIndentJsonStr(table);
+    char *json_str = JsonSerializer_ToIndentStr(table);
     s_out_f("%s", json_str);
     free(json_str);
     Delete_GenericTable(&table);
@@ -187,15 +190,15 @@ void Dynamic_Type(void)
     GenericTable_Add(table, "val", 5.56);
     s_out_f("the key 'val' correspond value is: %f\n", *GenericTable_Find_Double(table, "val"));
 
-    char *json_str = GenericTable_ToIndentJsonStr(table);
+    char *json_str = JsonSerializer_ToIndentStr(table);
     s_out_f("%s", json_str);
     free(json_str);
     Delete_GenericTable(&table);
 }
 
-void NestStructure_Test()
+void NestHybridStructure_Test()
 {
-    s_out("\n\nBegin test nest structure\n");
+    s_out("\n\nBegin test nest and hybrid structure\n");
 
     s_out("let's create table 1,2,3");
     GenericTable *table1 = New_GenericTable();
@@ -211,8 +214,15 @@ void NestStructure_Test()
     GenericTable_Add(table2, "My name is", "Table 2");
     GenericTable_Add(table3, "My name is", "Table 3");
 
+    GenericList *list1 = New_GenericList();
+    GenericList_Add(list1, 5);
+    GenericList_Add(list1, "6");
+    GenericList_Add(list1, 7.62);
+
+    GenericTable_Add(table1, "List 1", list1);
+
     s_out("OK, let's see how table 1 looks like now:\n");
-    char *str = GenericTable_ToIndentJsonStr(table1);
+    char *str = JsonSerializer_ToIndentStr(table1);
     s_out(str);
     free(str);
 
@@ -220,10 +230,87 @@ void NestStructure_Test()
     Delete_GenericTable(&table1);
 }
 
+void Test_GenericType_Equals()
+{
+    s_out("\n\nBegin GenericType_Equals test");
+    GenericType *obj1 = New_GenericType(5);
+    if (GenericType_Equals(obj1, obj1))
+    {
+        s_out("obj1 is equals it self");
+    }
+
+    GenericType *obj2 = New_GenericType(5);
+    if (GenericType_Equals(obj1, obj2))
+    {
+        s_out("obj1 is equals obj2");
+    }
+
+    GenericType *obj3 = New_GenericType(6);
+    if (!GenericType_Equals(obj1, obj3))
+    {
+        s_out("obj1 is not equals obj3");
+    }
+
+    if (!GenericType_Equals(obj1, NULL))
+    {
+        s_out("obj1 is not equals null");
+    }
+
+    if (!GenericType_Equals(NULL, NULL))
+    {
+        s_out("null is not equals null");
+    }
+}
+
+void List_Basic_Test()
+{
+    s_out("\n\nBegin list basic test");
+    GenericList *list = New_GenericList();
+    for (int i = 0; i < 5; i++)
+    {
+        GenericList_Add(list, i);
+    }
+    if (GenericList_IsEmpty(list)) return;
+    
+    int size = GenericList_Size(list);
+    s_out_f("list is not empty, and has %d elements", size);
+    for (int i = 0; i < size; i++)
+    {
+        GenericType *element = GenericList_At(list, i);
+        s_out_f("the index %d element is %d", i, *GenericType_GetInt(element));
+    }
+
+    for (int i = 0; i < 3; i++)
+    {
+        if (!GenericList_DeleteAt(list, i))
+        {
+            s_out_f("delete failed when tring delete at index %d", i);
+        }
+        else 
+        {
+            s_out_f("delete index %d success", i);
+        }
+    }
+    s_out("let's see how list is look like now");
+    for (int i = 0; i < GenericList_Size(list); i++)
+    {
+        GenericType *element = GenericList_At(list, i);
+        s_out_f("the index %d element is %d", i, *GenericType_GetInt(element));
+    }
+    
+    Delete_GenericList(&list);
+}
+
 int main(void)
 {
     Time_Test();
     Generic_Test();
     Dynamic_Type();
-    NestStructure_Test();
+    NestHybridStructure_Test();
+    List_Basic_Test();
+    Test_GenericType_Equals();
 }
+
+
+
+

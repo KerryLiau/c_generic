@@ -1,6 +1,7 @@
 #include "generic_type.h"
 #include "generic_list.h"
 #include "common_util.h"
+#include "generic_type_enum.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -97,7 +98,11 @@ void Delete_GenericType(GenericType **ptr_obj)
 
 GenericType* New_Str_GenericType(const char *value)
 {
-    if (!value) return NULL;
+    if (!value) 
+    {
+        s_out("the string pointer is null");
+        return NULL;
+    }
     return _New_GenericType(GEN_TYPE_STR, strdup(value));
 }
 
@@ -131,8 +136,22 @@ GenericType* New_Double_GenericType(double value)
 
 GenericType* New_Table_GenericType(GenericTable *value)
 {
-    if (!value) return NULL;
+    if (!value) 
+    {
+        s_out("the GenericTable pointer is null");
+        return NULL;
+    }
     return _New_GenericType(GEN_TYPE_TABLE, value);
+}
+
+GenericType* New_List_GenericType(struct GenericList *value)
+{
+    if (!value) 
+    {
+        s_out("the GenericList pointer is null");
+        return NULL;
+    }
+    return _New_GenericType(GEN_TYPE_LIST, value);
 }
 
 char* GenericType_GetStr(GenericType *gen_type)
@@ -171,6 +190,12 @@ GenericTable* GenericType_GetTable(GenericType *gen_type)
     return gen_type->value->h_val;
 }
 
+struct  GenericList* GenericType_GetList(GenericType *gen_type)
+{
+    if (gen_type->type != GEN_TYPE_LIST) return NULL;
+    return gen_type->value->a_val;
+}
+
 GenericTypeEnum GenericType_GetType(GenericType *gen_type)
 {
     return gen_type->type;
@@ -179,6 +204,54 @@ GenericTypeEnum GenericType_GetType(GenericType *gen_type)
 bool GenericType_IsType(GenericType *gen_type, GenericTypeEnum type)
 {
     return gen_type->type == type;
+}
+
+bool GenericType_Equals(GenericType *gen_type1, GenericType *gen_type2)
+{
+    if (CommonUtil_IsNull(gen_type1) | CommonUtil_IsNull(gen_type2)) 
+    {
+        if (!gen_type1) 
+        {
+            s_out_err("first param is null at GenericType_Equals!");
+        }
+        if (!gen_type2) 
+        {
+            s_out_err("second param is null at GenericType_Equals!");
+        }
+        return false;
+    }
+    if (gen_type1 == gen_type2) return true;
+    if (gen_type1->type != gen_type2->type) return false;
+
+    GenericValue *val1, *val2;
+    val1 = gen_type1->value;
+    val2 = gen_type2->value;
+    bool is_equals = false;
+    switch (gen_type1->type) 
+    {
+        case GEN_TYPE_STR:
+            is_equals = strcmp(val1->s_val, val2->s_val) == 0;
+        case GEN_TYPE_INT:
+            is_equals = *(val1->i_val) == *(val2->i_val);
+        case GEN_TYPE_LONG:
+            is_equals = *(val1->l_val) == *(val2->l_val);
+        case GEN_TYPE_FLOAT:
+            is_equals = *(val1->f_val) == *(val2->f_val);
+        case GEN_TYPE_DOUBLE:
+            is_equals = *(val1->d_val) == *(val2->d_val);
+        case GEN_TYPE_TABLE:
+            {
+                s_out("todo");
+                break;
+            }
+        case GEN_TYPE_LIST:
+            {
+                s_out("todo");
+                break;
+            }
+    }
+
+    return is_equals;
 }
 
 
