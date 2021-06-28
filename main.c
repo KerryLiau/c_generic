@@ -55,37 +55,41 @@ GenericTypeEnum type_of(char *val)
 int main(int argc, char **argv)
 {
     char *string = (char*) calloc(100, sizeof(char));
-    GenericTable *env = New_GenericTable();
+    GenericTable *table = New_GenericTable();
     int operate = 0;
     while (true)
     {
-        s_out("cmd:");
+        s_out("command:");
         fgets(string, size, stdin);
         string[strcspn(string, "\n")] = '\0';
         char *cmd = strdup(string);
-        if (!strcmp(cmd, "rm"))
+        if (!strcmp(cmd, "rm")) {
             operate = Delete;
-        else if (!strcmp(cmd, "add"))
+        } 
+        else if (!strcmp(cmd, "add")) 
+        {
             operate = Put;
-        if (strcmp(string, "exit") == 0)
+        }
+
+        if (strcmp(string, "exit") == 0) 
         {
             free(cmd);
             s_out("bye~");
             break;
         }
 
-        s_out("key:");
+        s_out("key name:");
         fgets(string, size, stdin);
         string[strcspn(string, "\n")] = '\0';
         char *key = strdup(string);
 
         if (operate == Delete)
         {
-            GenericTable_Delete(env, key);
+            GenericTable_Delete(table, key);
         }
         else 
         {
-            s_out("val:");
+            s_out("value:");
             fgets(string, size, stdin);
             string[strcspn(string, "\n")] = '\0';
             char *val = strdup(string);
@@ -93,20 +97,18 @@ int main(int argc, char **argv)
             switch (type_of(val)) 
             {
                 case GEN_TYPE_STR:
-                    GenericTable_Add(env, key, val);
+                    GenericTable_Add(table, key, val);
                     break;
                 case GEN_TYPE_INT:
-                    GenericTable_Add(env, key, atoi(val));
-                    break;
-                case GEN_TYPE_LONG:
-                    break;
-                case GEN_TYPE_FLOAT:
+                    GenericTable_Add(table, key, atoi(val));
                     break;
                 case GEN_TYPE_DOUBLE:
-                    GenericTable_Add(env, key, atof(val));
+                    GenericTable_Add(table, key, atof(val));
                     break;
+                // 以下型別先不進行處裡
+                case GEN_TYPE_LONG:
+                case GEN_TYPE_FLOAT:
                 case GEN_TYPE_TABLE:
-                    break;
                 case GEN_TYPE_LIST:
                     break;
                 default:
@@ -115,7 +117,7 @@ int main(int argc, char **argv)
             free(val);
         }
 
-        char *str = JsonSerializer_TableToIndentStr(env);
+        char *str = JsonSerializer_TableToIndentStr(table);
         s_out(str);
         free(str);
         free(key);
@@ -126,7 +128,7 @@ int main(int argc, char **argv)
             break;
         }
     }
-    Delete_GenericTable(&env);
+    Delete_GenericTable(&table);
     free(string);
 }
 
