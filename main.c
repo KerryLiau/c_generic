@@ -12,7 +12,7 @@
 #include "include/string_builder.h"
 #include "include/common_util.h"
 
-GenericTypeEnum type_of(char *val)
+GenericTypeEnum TypeOf(char *val)
 {
     GenericTypeEnum result;
     bool is_num = true;
@@ -49,87 +49,129 @@ GenericTypeEnum type_of(char *val)
     }
 }
 
-#define size 1000
-#define Put 1
-#define Delete 2
+void _PrintTable(GenericTable *table)
+{
+    char *str = JsonSerializer_TableToIndentStr(table);
+    s_out(str);
+    free(str);
+}
+
+#define BUF_SIZE 1000
+void _PutItem(GenericTable *table, char *key, char *in_buf)
+{
+    s_out("value:");
+    fgets(in_buf, BUF_SIZE, stdin);
+    in_buf[strcspn(in_buf, "\n")] = '\0';
+    char *val = strdup(in_buf);
+
+    switch (TypeOf(val)) 
+    {
+        case GEN_TYPE_STR:
+            GenericTable_Add(table, key, val);
+            break;
+        case GEN_TYPE_INT:
+            GenericTable_Add(table, key, atoi(val));
+            break;
+        case GEN_TYPE_DOUBLE:
+            GenericTable_Add(table, key, atof(val));
+            break;
+        // 以下型別先不進行處裡
+        case GEN_TYPE_LONG:
+        case GEN_TYPE_FLOAT:
+        case GEN_TYPE_TABLE:
+        case GEN_TYPE_LIST:
+            break;
+        default:
+            free(val);
+            break;;
+    }
+
+    free(val);
+}
+
+#define ACT_NON -1
+#define ACT_EXIT 0
+#define ACT_SET 1
+#define ACT_DEL 2
+#define ACT_SHOW 3
+
+#define CMD_EXIT "exit"
+#define CMD_DEL "del"
+#define CMD_SET "set"
+#define CMD_SHOW "show"
+
+int _PendingAction(char *cmd)
+{
+    int result = ACT_NON;
+    if (!strcmp(cmd, CMD_DEL)) 
+    {
+        result = ACT_DEL;
+    } 
+    else if (!strcmp(cmd, CMD_SET)) 
+    {
+        result = ACT_SET;
+    } 
+    else if (!strcmp(cmd, CMD_SHOW)) 
+    {
+        result = ACT_SHOW;
+    }
+    else if (!strcmp(cmd, CMD_EXIT)) 
+    {
+        result = ACT_EXIT;
+    }
+
+    return result;
+}
+
+char* _ReadKey(char *in_buf)
+{
+    s_out("key name:");
+    fgets(in_buf, BUF_SIZE, stdin);
+    in_buf[strcspn(in_buf, "\n")] = '\0';
+    return strdup(in_buf);
+}
+
 int main(int argc, char **argv)
 {
-    char *string = (char*) calloc(100, sizeof(char));
+    char *in_buf = (char*) calloc(100, sizeof(char));
     GenericTable *table = New_GenericTable();
-    int operate = 0;
+    int action;
     while (true)
     {
         s_out("command:");
-        fgets(string, size, stdin);
-        string[strcspn(string, "\n")] = '\0';
-        char *cmd = strdup(string);
-        if (!strcmp(cmd, "rm")) {
-            operate = Delete;
-        } 
-        else if (!strcmp(cmd, "add")) 
+        fgets(in_buf, BUF_SIZE, stdin);
+        in_buf[strcspn(in_buf, "\n")] = '\0';
+        char *cmd, *key;
+        cmd = strdup(in_buf);
+        action = _PendingAction(cmd);
+
+        switch (action) 
         {
-            operate = Put;
+            case ACT_EXIT:
+                free(cmd);
+                s_out("bye~");
+                break;
+            case ACT_DEL:
+                key = _ReadKey(in_buf);
+                GenericTable_Delete(table, key);
+                free(key);
+                break;
+            case ACT_SET:
+                key = _ReadKey(in_buf);
+                _PutItem(table, key, in_buf);
+                free(key);
+                break;
+            case ACT_SHOW:
+                _PrintTable(table);
+                break;
+            default:
+                break;
         }
 
-        if (strcmp(string, "exit") == 0) 
-        {
-            free(cmd);
-            s_out("bye~");
-            break;
-        }
-
-        s_out("key name:");
-        fgets(string, size, stdin);
-        string[strcspn(string, "\n")] = '\0';
-        char *key = strdup(string);
-
-        if (operate == Delete)
-        {
-            GenericTable_Delete(table, key);
-        }
-        else 
-        {
-            s_out("value:");
-            fgets(string, size, stdin);
-            string[strcspn(string, "\n")] = '\0';
-            char *val = strdup(string);
-
-            switch (type_of(val)) 
-            {
-                case GEN_TYPE_STR:
-                    GenericTable_Add(table, key, val);
-                    break;
-                case GEN_TYPE_INT:
-                    GenericTable_Add(table, key, atoi(val));
-                    break;
-                case GEN_TYPE_DOUBLE:
-                    GenericTable_Add(table, key, atof(val));
-                    break;
-                // 以下型別先不進行處裡
-                case GEN_TYPE_LONG:
-                case GEN_TYPE_FLOAT:
-                case GEN_TYPE_TABLE:
-                case GEN_TYPE_LIST:
-                    break;
-                default:
-                    return false;
-            }
-            free(val);
-        }
-
-        char *str = JsonSerializer_TableToIndentStr(table);
-        s_out(str);
-        free(str);
-        free(key);
         free(cmd);
-        if (strcmp(string, "exit") == 0)
-        {
-            s_out("bye~");
-            break;
-        }
     }
     Delete_GenericTable(&table);
-    free(string);
+    free(in_buf);
 }
 
 
