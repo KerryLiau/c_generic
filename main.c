@@ -12,7 +12,7 @@
 #include "include/string_builder.h"
 #include "include/common_util.h"
 
-GenericTypeEnum TypeOf(char *val)
+GenericTypeEnum _TypeOf(char *val)
 {
     GenericTypeEnum result;
     bool is_num = true;
@@ -57,14 +57,19 @@ void _PrintTable(GenericTable *table)
 }
 
 #define BUF_SIZE 1000
+char* _ReadInput(char *in_buf)
+{
+    fgets(in_buf, BUF_SIZE, stdin);
+    in_buf[strcspn(in_buf, "\n")] = '\0';
+    return strdup(in_buf);
+}
+
 void _PutItem(GenericTable *table, char *key, char *in_buf)
 {
     s_out("value:");
-    fgets(in_buf, BUF_SIZE, stdin);
-    in_buf[strcspn(in_buf, "\n")] = '\0';
-    char *val = strdup(in_buf);
+    char *val = _ReadInput(in_buf);
 
-    switch (TypeOf(val)) 
+    switch (_TypeOf(val)) 
     {
         case GEN_TYPE_STR:
             GenericTable_Add(table, key, val);
@@ -94,11 +99,13 @@ void _PutItem(GenericTable *table, char *key, char *in_buf)
 #define ACT_SET 1
 #define ACT_DEL 2
 #define ACT_SHOW 3
+#define ACT_INCR 4
 
 #define CMD_EXIT "exit"
 #define CMD_DEL "del"
 #define CMD_SET "set"
 #define CMD_SHOW "show"
+#define CMD_INCR "incr"
 
 int _PendingAction(char *cmd)
 {
@@ -119,6 +126,10 @@ int _PendingAction(char *cmd)
     {
         result = ACT_EXIT;
     }
+    else if (!strcmp(cmd, CMD_INCR))
+    {
+        return ACT_INCR;
+    }
 
     return result;
 }
@@ -126,9 +137,41 @@ int _PendingAction(char *cmd)
 char* _ReadKey(char *in_buf)
 {
     s_out("key name:");
-    fgets(in_buf, BUF_SIZE, stdin);
-    in_buf[strcspn(in_buf, "\n")] = '\0';
-    return strdup(in_buf);
+    return _ReadInput(in_buf);
+}
+
+void _IncreaseValue(GenericTable *table, char *in_buf)
+{
+    char *key, *val;
+    key = _ReadKey(in_buf);
+    s_out("value:");
+    val = _ReadInput(in_buf);
+    switch (_TypeOf(val))
+    {
+        case GEN_TYPE_INT:
+        {
+            int *num = GenericTable_Find_Int(table, key);
+            if (!num) 
+            {
+                s_out_f("key %s value is not integer", key);
+                break;
+            }
+            *num += atoi(val);
+            s_out_f("result: %d", *num);
+            GenericTable_Add_Int(table, key, *num);
+            break;
+        }
+        default:
+            break;
+    }
+    if (key) 
+    {
+        free(key);
+    }
+    if (val) 
+    {
+        free(val);
+    }
 }
 
 int main(int argc, char **argv)
@@ -139,16 +182,13 @@ int main(int argc, char **argv)
     while (true)
     {
         s_out("command:");
-        fgets(in_buf, BUF_SIZE, stdin);
-        in_buf[strcspn(in_buf, "\n")] = '\0';
         char *cmd, *key;
-        cmd = strdup(in_buf);
+        cmd = _ReadInput(in_buf);
         action = _PendingAction(cmd);
 
         switch (action) 
         {
             case ACT_EXIT:
-                free(cmd);
                 s_out("bye~");
                 break;
             case ACT_DEL:
@@ -164,11 +204,22 @@ int main(int argc, char **argv)
             case ACT_SHOW:
                 _PrintTable(table);
                 break;
+            case ACT_INCR:
+                _IncreaseValue(table, in_buf);
+                break;
             default:
                 break;
         }
 
-        free(cmd);
+        if (cmd) 
+        {
+            free(cmd);
+        }
+        
+        if (action == ACT_EXIT) 
+        {
+            break;
+        }
     }
     Delete_GenericTable(&table);
     free(in_buf);
