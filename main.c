@@ -19,16 +19,33 @@ GenericTypeEnum _TypeOf(char *val)
     int dot = 0;
     for (int i = 0; i < strlen(val); i++)
     {
-        if (val[i] >= '0' && val[i] <= '9') 
+        char next = val[i];
+        if (next >= '0' && next <= '9') 
         {
             is_num = true;
-        } else if (val[i] == '.') {
+        } 
+        else if (next == '.') 
+        {
             dot++;
-            if (i == strlen(val) - 1 || i == 0 || dot > 1) 
+            // the dot can't type at head or tail
+            bool is_first_or_last, is_duplicate;
+            is_first_or_last = i == 0 || i == strlen(val) - 1;
+            is_duplicate = dot > 1;
+            if (is_first_or_last || is_duplicate)
             {
                 is_num = false;
             }
-        } else {
+        }
+        else if (next == '-')
+        {
+            bool is_not_first = i != 0;
+            if (is_not_first)
+            {
+                is_num = false;
+            }
+        }
+        else 
+        {
             is_num = false;
         }
         if (!is_num)
@@ -41,10 +58,14 @@ GenericTypeEnum _TypeOf(char *val)
         if (dot)
         {
             return GEN_TYPE_DOUBLE;
-        } else {
+        } 
+        else 
+        {
             return GEN_TYPE_INT;
         }
-    } else {
+    } 
+    else 
+    {
         return GEN_TYPE_STR;
     }
 }
@@ -100,12 +121,14 @@ void _PutItem(GenericTable *table, char *key, char *in_buf)
 #define ACT_DEL 2
 #define ACT_SHOW 3
 #define ACT_INCR 4
+#define ACT_HELP 5
 
 #define CMD_EXIT "exit"
 #define CMD_DEL "del"
 #define CMD_SET "set"
 #define CMD_SHOW "show"
 #define CMD_INCR "incr"
+#define CMD_HELP "help"
 
 int _PendingAction(char *cmd)
 {
@@ -130,6 +153,10 @@ int _PendingAction(char *cmd)
     {
         return ACT_INCR;
     }
+    else if (!strcmp(cmd, CMD_HELP))
+    {
+        return ACT_HELP;
+    }
 
     return result;
 }
@@ -153,12 +180,25 @@ void _IncreaseValue(GenericTable *table, char *in_buf)
             int *num = GenericTable_Find_Int(table, key);
             if (!num) 
             {
-                s_out_f("key %s value is not integer", key);
+                s_out_f("the type of \"%s\" is not integer", key);
                 break;
             }
             *num += atoi(val);
             s_out_f("result: %d", *num);
             GenericTable_Add_Int(table, key, *num);
+            break;
+        }
+        case GEN_TYPE_DOUBLE:
+        {
+            double *num = GenericTable_Find_Double(table, key);
+            if (!num)
+            {
+                s_out_f("the type of \"%s\" is not double", key);
+                break;
+            }
+            *num += atof(val);
+            s_out_f("result: %f", *num);
+            GenericTable_Add_Double(table, key, *num);
             break;
         }
         default:
@@ -174,18 +214,27 @@ void _IncreaseValue(GenericTable *table, char *in_buf)
     }
 }
 
+void _help()
+{
+    s_out("set: set var");
+    s_out("del: delete var");
+    s_out("incr: incr var, if var is number");
+    s_out("show: show map body in json format");
+    s_out("exit: exit the application");
+}
+
 int main(int argc, char **argv)
 {
     char *in_buf = (char*) calloc(100, sizeof(char));
     GenericTable *table = New_GenericTable();
     int action;
+    s_out("Welcome, please type command below, or type 'help' for more info.");
     while (true)
     {
-        s_out("command:");
+        printf(">");
         char *cmd, *key;
         cmd = _ReadInput(in_buf);
         action = _PendingAction(cmd);
-
         switch (action) 
         {
             case ACT_EXIT:
@@ -206,6 +255,9 @@ int main(int argc, char **argv)
                 break;
             case ACT_INCR:
                 _IncreaseValue(table, in_buf);
+                break;
+            case ACT_HELP:
+                _help();
                 break;
             default:
                 break;
