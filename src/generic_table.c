@@ -368,6 +368,14 @@ GenericTable* GenericTable_Find_Table(GenericTable *table, const char *key)
     return GenericType_GetTable(gen);
 }
 
+GenericTypeEnum GenericTable_ValueType(GenericTable *table, const char *key)
+{
+    GenericTableItem *item = _Find(table, key);
+    if (!item) return -1;
+
+    return GenericType_GetType(item->value);
+}
+
 void GenericTable_Delete(GenericTable *table, const char *key)
 {
     GenericTable_Private *priv = table->priv;

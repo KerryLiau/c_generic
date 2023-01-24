@@ -27,11 +27,11 @@ GenericTypeEnum _TypeOf(char *val)
         else if (next == '.') 
         {
             dot++;
-            // the dot can't type at head or tail
-            bool is_first_or_last, is_duplicate;
-            is_first_or_last = i == 0 || i == strlen(val) - 1;
+            // the dot can't type at tail
+            bool is_last, is_duplicate;
+            is_last = i == strlen(val) - 1;
             is_duplicate = dot > 1;
-            if (is_first_or_last || is_duplicate)
+            if (is_last || is_duplicate)
             {
                 is_num = false;
             }
@@ -115,6 +115,35 @@ void _PutItem(GenericTable *table, char *key, char *in_buf)
     free(val);
 }
 
+void _FindItem(GenericTable *table, char *key)
+{
+    void *item;
+    s_out_f("type: %d", GenericTable_ValueType(table, key));
+    switch (GenericTable_ValueType(table, key))
+    {
+        case GEN_TYPE_STR:
+        {
+            item = GenericTable_Find_Str(table, key);
+            s_out_f("%s", ((char*) item));
+            break;
+        }
+        case GEN_TYPE_INT:
+        {
+            item = GenericTable_Find_Int(table, key);
+            s_out_f("%d", *((int*) item));
+            break;
+        }
+        case GEN_TYPE_DOUBLE:
+        {
+            item = GenericTable_Find_Double(table, key);
+            s_out_f("%f", *((double*) item));
+            break;
+        }
+        default:
+            break;
+    }
+}
+
 #define ACT_NON -1
 #define ACT_EXIT 0
 #define ACT_SET 1
@@ -122,6 +151,7 @@ void _PutItem(GenericTable *table, char *key, char *in_buf)
 #define ACT_SHOW 3
 #define ACT_INCR 4
 #define ACT_HELP 5
+#define ACT_GET 6
 
 #define CMD_EXIT "exit"
 #define CMD_DEL "del"
@@ -129,36 +159,19 @@ void _PutItem(GenericTable *table, char *key, char *in_buf)
 #define CMD_SHOW "show"
 #define CMD_INCR "incr"
 #define CMD_HELP "help"
+#define CMD_GET "get"
 
-int _PendingAction(char *cmd)
+GenericTable *_cmd_table;
+void _Init_action_map() 
 {
-    int result = ACT_NON;
-    if (!strcmp(cmd, CMD_DEL)) 
-    {
-        result = ACT_DEL;
-    } 
-    else if (!strcmp(cmd, CMD_SET)) 
-    {
-        result = ACT_SET;
-    } 
-    else if (!strcmp(cmd, CMD_SHOW)) 
-    {
-        result = ACT_SHOW;
-    }
-    else if (!strcmp(cmd, CMD_EXIT)) 
-    {
-        result = ACT_EXIT;
-    }
-    else if (!strcmp(cmd, CMD_INCR))
-    {
-        return ACT_INCR;
-    }
-    else if (!strcmp(cmd, CMD_HELP))
-    {
-        return ACT_HELP;
-    }
-
-    return result;
+    _cmd_table = New_GenericTable();
+    GenericTable_Add(_cmd_table, CMD_DEL, ACT_DEL);
+    GenericTable_Add(_cmd_table, CMD_SET, ACT_SET);
+    GenericTable_Add(_cmd_table, CMD_GET, ACT_GET);
+    GenericTable_Add(_cmd_table, CMD_SHOW, ACT_SHOW);
+    GenericTable_Add(_cmd_table, CMD_EXIT, ACT_EXIT);
+    GenericTable_Add(_cmd_table, CMD_INCR, ACT_INCR);
+    GenericTable_Add(_cmd_table, CMD_HELP, ACT_HELP);
 }
 
 char* _ReadKey(char *in_buf)
@@ -217,14 +230,27 @@ void _IncreaseValue(GenericTable *table, char *in_buf)
 void _help()
 {
     s_out("set: set var");
+    s_out("get: get var");
     s_out("del: delete var");
     s_out("incr: incr var, if var is number");
     s_out("show: show map body in json format");
     s_out("exit: exit the application");
 }
 
+int _Pending_action(char *cmd)
+{
+    int *act = GenericTable_Find_Int(_cmd_table, cmd);
+    if (!act)
+    {
+        return ACT_NON;
+    }
+    return *act;
+}
+
 int main(int argc, char **argv)
 {
+    _Init_action_map();
+    _PrintTable(_cmd_table);
     char *in_buf = (char*) calloc(100, sizeof(char));
     GenericTable *table = New_GenericTable();
     int action;
@@ -234,7 +260,7 @@ int main(int argc, char **argv)
         printf(">");
         char *cmd, *key;
         cmd = _ReadInput(in_buf);
-        action = _PendingAction(cmd);
+        action = _Pending_action(cmd);
         switch (action) 
         {
             case ACT_EXIT:
@@ -248,6 +274,11 @@ int main(int argc, char **argv)
             case ACT_SET:
                 key = _ReadKey(in_buf);
                 _PutItem(table, key, in_buf);
+                free(key);
+                break;
+            case ACT_GET:
+                key = _ReadKey(in_buf);
+                _FindItem(table, key);
                 free(key);
                 break;
             case ACT_SHOW:
@@ -274,6 +305,7 @@ int main(int argc, char **argv)
         }
     }
     Delete_GenericTable(&table);
+    Delete_GenericTable(&_cmd_table);
     free(in_buf);
 }
 

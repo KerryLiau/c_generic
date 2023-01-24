@@ -2,6 +2,7 @@
 #define GENERIC_TABLE_H
 
 #include "common_util.h"
+#include "generic_type_enum.h"
 
 struct GenericList;
 
@@ -117,6 +118,11 @@ float* GenericTable_Find_Float(GenericTable *table, const char *key);
  * 如 key 不存在，或查找出的值並非映射表，將回傳 NULL
  */
 GenericTable* GenericTable_Find_Table(GenericTable *table, const char *key);
+
+/**
+ * 
+ */
+GenericTypeEnum GenericTable_ValueType(GenericTable *table, const char *key);
 
 /**
  * 移除映射表中 key 對應到的物件，並將對應的位置標記為已棄用
